@@ -616,7 +616,7 @@ function buildSummaryText(choices, status) {
 
   // 用户画像摘要（只取已答题目）
   lines.push('');
-  lines.push('用户画像摘要（供模型参考）：');
+  lines.push('用户画像摘要：');
   QUESTIONS.forEach((q, idx) => {
     const choice = choices.find(c => c.qIndex === idx && c.optIndex !== -1);
     if (choice) {
