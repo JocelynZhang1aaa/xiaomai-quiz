@@ -547,6 +547,127 @@ let isAnimating = false;
 let touchStartX = 0;
 let touchStartY = 0;
 
+// ===== 上报模块 =====
+const REPORT_CONFIG = {
+  api_url: 'https://your-backend.example.com/api/quiz-event', // TODO: 替换为真实接口
+  bot_id: 'xiaomai',
+  bot_name: '小麦',
+  game_name: '小麦想了解你多一点',
+};
+
+// 本次会话 ID（页面加载时生成，重新开始时重新生成）
+let SESSION_ID = generateSessionId();
+
+function generateSessionId() {
+  return 'sq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+// 格式化时间为可读字符串
+function formatTime(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}年${pad(d.getMonth()+1)}月${pad(d.getDate())}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// 生成自然语言画像摘要
+function buildSummaryText(choices, status) {
+  const cfg = REPORT_CONFIG;
+  const now = formatTime(Date.now());
+  const answered = choices.filter(c => c.optIndex !== -1);
+  const skipped  = choices.filter(c => c.optIndex === -1);
+  const total = QUESTIONS.length;
+
+  let lines = [];
+  lines.push(`用户与${cfg.bot_name}（bot_id: ${cfg.bot_id}）于 ${now} 进行了「${cfg.game_name}」破冰游戏。`);
+  lines.push('');
+
+  if (status === 'complete') {
+    lines.push(`用户完成全部 ${total} 题。`);
+  } else {
+    const doneCount = choices.length;
+    const remaining = total - doneCount;
+    if (status === 'exit_chat') {
+      lines.push(`用户完成 ${doneCount} 题后点击「和${cfg.bot_name}聊天」进入聊天，剩余 ${remaining} 题未作答。`);
+    } else if (status === 'exit_swipe') {
+      const lastQ = QUESTIONS[currentQ];
+      lines.push(`用户完成 ${doneCount} 题，在第 ${currentQ + 1} 题「${lastQ ? lastQ.q : ''}」左滑跳出，剩余 ${remaining} 题未作答。`);
+    } else {
+      lines.push(`用户完成 ${doneCount} 题，游戏中途结束。`);
+    }
+  }
+
+  lines.push('');
+  lines.push('答题记录：');
+
+  QUESTIONS.forEach((q, idx) => {
+    const choice = choices.find(c => c.qIndex === idx);
+    if (!choice) {
+      lines.push(`${idx+1}. [${q.cat}] ${q.q} → （未作答）`);
+    } else if (choice.optIndex === -1) {
+      lines.push(`${idx+1}. [${q.cat}] ${q.q} → （跳过）`);
+    } else {
+      const opt = q.opts[choice.optIndex];
+      lines.push(`${idx+1}. [${q.cat}] ${q.q} → ${opt.text}`);
+      if (opt.reply) {
+        lines.push(`   ${cfg.bot_name}回应：「${opt.reply}」`);
+      }
+    }
+  });
+
+  // 用户画像摘要（只取已答题目）
+  lines.push('');
+  lines.push('用户画像摘要（供模型参考）：');
+  QUESTIONS.forEach((q, idx) => {
+    const choice = choices.find(c => c.qIndex === idx && c.optIndex !== -1);
+    if (choice) {
+      lines.push(`- [${q.cat}] ${q.q}：${choice.optText}`);
+    }
+  });
+  if (answered.length === 0) {
+    lines.push('- 用户未作答任何题目');
+  }
+
+  return lines.join('\n');
+}
+
+// 上报函数（静默失败，不阻断答题）
+function reportEvent(eventType, extraPayload) {
+  const cfg = REPORT_CONFIG;
+  const payload = {
+    session_id: SESSION_ID,
+    bot_id: cfg.bot_id,
+    bot_name: cfg.bot_name,
+    game_name: cfg.game_name,
+    timestamp: Date.now(),
+    timestamp_human: formatTime(Date.now()),
+    event: eventType,
+    current_question_index: currentQ,
+    answers_so_far: userChoices.map(c => ({
+      question_index: c.qIndex,
+      category: c.cat,
+      question_text: c.qText,
+      option_index: c.optIndex,
+      option_text: c.optText,
+      bot_reply: c.botReply || '',
+    })),
+    ...extraPayload,
+  };
+
+  // 如果是结束类事件，附上自然语言摘要
+  if (['complete', 'exit_chat', 'exit_swipe'].includes(eventType)) {
+    payload.summary_text = buildSummaryText(userChoices, eventType);
+  }
+
+  try {
+    fetch(cfg.api_url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true, // 页面关闭时也尽量送达
+    }).catch(() => {}); // 静默失败
+  } catch (e) {} // 静默失败
+}
+
 // ===== 随机抽取题目 =====
 function drawQuestions() {
   // Fisher-Yates 洗牌，取前5道
@@ -560,6 +681,7 @@ function drawQuestions() {
 
 // ===== 初始化 / 开始答题 =====
 function startQuiz() {
+  SESSION_ID = generateSessionId(); // 每次重新开始生成新 session
   setRandomSubtitle();
   QUESTIONS = drawQuestions();
   currentQ = 0;
@@ -641,12 +763,20 @@ function selectOption(qIdx, optIdx) {
 
   const q = QUESTIONS[qIdx];
 
+  const chosenOpt = q.opts[optIdx];
   userChoices.push({
     qIndex: qIdx,
     optIndex: optIdx,
     qText: q.q,
-    optText: q.opts[optIdx].text,
-    cat: q.cat
+    optText: chosenOpt.text,
+    cat: q.cat,
+    botReply: chosenOpt.reply || '',
+  });
+
+  // 上报单次选择事件
+  reportEvent('answer', {
+    question: { index: qIdx, category: q.cat, text: q.q },
+    chosen: { index: optIdx, text: chosenOpt.text, bot_reply: chosenOpt.reply || '' },
   });
 
   q.opts.forEach((_, i) => {
@@ -720,6 +850,9 @@ function showResult() {
   document.getElementById('resultScreen').classList.remove('hide');
   // v1：结果页用固定GIF，不随机切换
 
+  // 上报完成事件
+  reportEvent('complete', { total_questions: QUESTIONS.length });
+
   // 随机取一条标签
   const label = XIAOMAI_LABELS[Math.floor(Math.random() * XIAOMAI_LABELS.length)];
   document.getElementById('scoreLabel').textContent = '「' + label + '」';
@@ -735,6 +868,8 @@ function showResult() {
 
 // ===== 去和小麦聊天（配置跳转地址）=====
 function goChat() {
+  // 上报点击聊天事件
+  reportEvent('exit_chat', { trigger: 'chat_button' });
   var url = 'https://qun.qq.com/qunpro/robot/qunshare?robot_appid=3889687544&robot_uin=102775739';
   try {
     var win = window.open(url, '_blank');
@@ -790,12 +925,19 @@ function skipToNext() {
     showResult();
     return;
   }
+  const skippedQ = QUESTIONS[currentQ];
   userChoices.push({
     qIndex: currentQ,
     optIndex: -1,
-    qText: QUESTIONS[currentQ].q,
+    qText: skippedQ.q,
     optText: '（跳过）',
-    cat: QUESTIONS[currentQ].cat
+    cat: skippedQ.cat,
+    botReply: '',
+  });
+  // 上报左滑跳题事件
+  reportEvent('exit_swipe', {
+    trigger: 'swipe_left',
+    skipped_question: { index: currentQ, category: skippedQ.cat, text: skippedQ.q },
   });
   isAnimating = true;
   setTimeout(() => { advanceToNext(); }, 100);
