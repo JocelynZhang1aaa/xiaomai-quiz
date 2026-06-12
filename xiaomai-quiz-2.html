@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>小麦想了解你多一点</title>
+<style>
+  :root{
+    --bg:#FBF6EE;
+    --card:#FFFCF5;
+    --ink:#3F3329;
+    --ink-soft:#7A6A5C;
+    --pink:#F7C7C0;
+    --pink-deep:#C97A9E;
+    --mint:#B8DCC6;
+    --yellow:#F5E2A0;
+    --line:#D9C9B6;
+    --purple:#A67BB5;
+    --purple-light:#E8D4F0;
+    --purple-soft:#F5EDFA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Maru Gothic ProN","PingFang SC","Yuanti SC",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;overflow-x:hidden;
+    touch-action:pan-y;
+  }
+  body{
+    background:
+      linear-gradient(var(--bg),var(--bg)),
+      repeating-linear-gradient(0deg,transparent 0 23px,#E8DDC9 23px 24px),
+      repeating-linear-gradient(90deg,transparent 0 23px,#E8DDC9 23px 24px);
+    background-blend-mode:multiply;
+  }
+  .app{max-width:520px;margin:0 auto;padding:20px 14px 60px;min-height:100vh;position:relative;}
+
+  /* ===== BGM按钮 ===== */
+  #bgmToggle{
+    position:absolute;right:14px;top:14px;
+    background:var(--mint);border:1px dashed #6fb89a;color:var(--ink);
+    font-size:12px;padding:4px 10px;border-radius:20px;cursor:pointer;
+    font-family:inherit;box-shadow:1px 2px 0 #6fb89a;transition:all .15s;z-index:100;
+  }
+  #bgmToggle:hover{transform:rotate(-2deg);}
+  #bgmToggle.on{background:var(--pink);border-color:#d97a8e;box-shadow:1px 2px 0 #d97a8e;}
+
+  /* ===== 顶部标题 ===== */
+  .header{text-align:center;padding:16px 0 8px;position:relative;}
+  .header h1{font-size:22px;letter-spacing:2px;color:var(--ink);font-weight:800;}
+  .header h1 .highlight{color:var(--purple);position:relative;}
+  .header h1 .highlight::after{
+    content:"";position:absolute;bottom:2px;left:-2px;right:-2px;height:8px;
+    background:var(--purple-light);border-radius:4px;z-index:-1;opacity:0.7;
+  }
+  .header .sub{margin-top:8px;font-size:12px;color:var(--ink-soft);letter-spacing:1px;}
+
+  /* ===== 回形针 ===== */
+  .clip{
+    position:absolute;width:14px;height:28px;border:2.5px solid;border-radius:0 0 10px 10px;
+    transform:rotate(-15deg);z-index:5;pointer-events:none;
+  }
+  .clip::before{
+    content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+    width:2.5px;height:10px;background:inherit;border-radius:2px;
+  }
+  .clip.pink{border-color:var(--pink-deep);}
+  .clip.yellow{border-color:var(--yellow);filter:saturate(0.8);}
+  .clip.mint{border-color:var(--mint);filter:saturate(0.7);}
+  .clip.purple{border-color:var(--purple);}
+
+  /* ===== 进度条 ===== */
+  .progress-wrap{display:flex;align-items:center;gap:8px;margin:12px 8px 14px;font-size:12px;color:var(--ink-soft);}
+  .progress-bar{flex:1;height:6px;background:#EDE2D2;border-radius:3px;overflow:hidden;}
+  .progress-bar > i{display:block;height:100%;background:var(--purple);width:0%;transition:width .5s cubic-bezier(.4,.0,.2,1);border-radius:3px;}
+
+  /* ===== 卡片堆叠容器 ===== */
+  .card-stack{position:relative;height:420px;overflow:hidden;}
+
+  /* ===== 卡片（可滑动）===== */
+  .slide-card{
+    position:absolute;top:0;left:0;right:0;
+    background:var(--card);border:1.5px dashed var(--line);border-radius:18px;
+    padding:26px 18px 22px;height:100%;
+    box-shadow:3px 5px 0 rgba(60,40,20,0.08);
+    display:flex;flex-direction:column;
+    transition:transform .38s cubic-bezier(.4,.0,.2,1),opacity .38s cubic-bezier(.4,.0,.2,1);
+    will-change:transform,opacity;
+    cursor:grab;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .slide-card:active{cursor:grabbing;}
+  .slide-card.behind{
+    transform:scale(0.95) translateY(8px);
+    opacity:0.4;pointer-events:none;z-index:1;
+  }
+  .slide-card.active{
+    transform:translateX(0) scale(1);opacity:1;z-index:10;
+  }
+  .slide-card.slide-out-left{
+    transform:translateX(-120%) scale(0.9);opacity:0;z-index:10;
+  }
+  .slide-card.slide-out-right{
+    transform:translateX(120%) scale(0.9);opacity:0;z-index:10;
+  }
+
+  /* ===== 卡片内容 ===== */
+  .card-tag{text-align:center;font-size:11px;color:var(--ink-soft);letter-spacing:2px;margin-bottom:14px;}
+  .card-tag .dot{color:var(--purple);font-weight:700;}
+  .card-tag .cat-badge{display:inline-block;background:var(--purple-soft);color:var(--purple);padding:1px 8px;border-radius:10px;font-size:10px;margin-left:6px;}
+
+  .question-area{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+  .question-text{font-size:17px;font-weight:700;line-height:1.65;color:var(--ink);margin-bottom:22px;padding:0 6px;}
+
+  .options{width:100%;display:flex;flex-direction:column;gap:11px;padding:0 2px;}
+  .opt-btn{
+    background:#fff;border:1.5px solid var(--purple-light);border-radius:24px;
+    padding:12px 14px;font-size:15px;color:var(--purple);font-weight:600;
+    text-align:center;cursor:pointer;transition:all .2s;letter-spacing:1px;
+    font-family:inherit;outline:none;-webkit-tap-highlight-color:transparent;
+  }
+  .opt-btn:hover{border-color:var(--purple);background:var(--purple-soft);}
+  .opt-btn:active{transform:scale(0.98);}
+  .opt-btn.selected{
+    border-color:var(--purple);background:var(--purple-soft);
+    box-shadow:inset 0 0 0 2px var(--purple-light);
+  }
+  .opt-btn.disabled{opacity:0.35;pointer-events:none;}
+
+  /* ===== 小麦回应区 ===== */
+  .reply-area{
+    margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);
+    display:none;animation:replyIn .45s cubic-bezier(.4,.0,.2,1);
+  }
+  .reply-area.show{display:block;}
+  @keyframes replyIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  .xiaomai-row{display:flex;align-items:flex-start;gap:10px;}
+  .xiaomai-avatar{
+    width:72px;height:72px;border-radius:50%;border:2.5px solid var(--pink);
+    background:var(--card);flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    font-size:30px;overflow:hidden;box-shadow:2px 3px 0 rgba(244,182,196,0.4);
+  }
+  .xiaomai-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+  .xiaomai-bubble{
+    flex:1;background:var(--purple-soft);border:1.5px dashed var(--purple-light);
+    border-radius:14px;border-top-left-radius:4px;padding:11px 13px;
+    font-size:13.5px;line-height:1.75;color:var(--ink);position:relative;
+  }
+  .xiaomai-bubble::before{
+    content:"";position:absolute;left:-7px;top:10px;width:0;height:0;
+    border-top:5px solid transparent;border-bottom:5px solid transparent;
+    border-right:7px solid var(--purple-light);
+  }
+
+  /* ===== 提示文字 ===== */
+  .hint-text{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:14px;letter-spacing:1px;}
+
+  /* ===== 结果页 ===== */
+  .result-screen{text-align:center;padding:16px 6px 40px;animation:fadeIn .5s ease;}
+
+  /* 主卡片 */
+  .result-card{
+    background:var(--card);border:1.5px dashed var(--line);border-radius:18px;
+    padding:28px 18px 24px;position:relative;box-shadow:3px 5px 0 rgba(60,40,20,0.08);
+    margin-bottom:0;text-align:center;
+  }
+  .result-card::before{
+    content:"";position:absolute;top:-10px;left:24px;width:38px;height:14px;
+    background:var(--pink);border-radius:3px;transform:rotate(-3deg);opacity:0.85;
+  }
+
+  /* 标题 */
+  .result-title{
+    font-size:20px;font-weight:800;color:var(--pink-deep);letter-spacing:2px;
+    margin-bottom:16px;font-family:inherit;
+  }
+
+  /* 人物图片卡 */
+  .chara-img-wrap{
+    position:relative;width:200px;margin:0 auto 18px;
+    border-radius:14px;overflow:hidden;
+    box-shadow:3px 6px 16px rgba(60,40,20,0.15);
+    border:3px solid #fff;
+    transform:rotate(-1.5deg);
+  }
+  .chara-img-wrap img{width:100%;height:auto;display:block;}
+
+  /* 分数 */
+  .score-wrap{margin-bottom:10px;}
+  .score-num{font-size:56px;font-weight:900;color:var(--pink-deep);line-height:1;letter-spacing:-2px;}
+  .score-total{font-size:22px;color:var(--ink-soft);font-weight:600;}
+  .score-label{
+    display:inline-block;background:var(--yellow);color:var(--ink);
+    font-size:14px;font-weight:700;padding:5px 20px;border-radius:20px;
+    letter-spacing:2px;margin-top:6px;
+    box-shadow:1px 2px 0 rgba(160,120,40,0.2);
+  }
+
+
+  /* 关于小麦 */
+  .about-section{
+    background:var(--purple-soft);border:1.5px dashed var(--purple-light);
+    border-radius:14px;padding:14px 16px;text-align:left;margin-bottom:20px;
+  }
+  .about-title{
+    font-size:13px;font-weight:700;color:var(--pink-deep);
+    margin-bottom:8px;letter-spacing:1px;
+  }
+  .about-title::after{content:"——";margin-left:2px;color:var(--pink-deep);}
+  .about-text{font-size:13px;line-height:1.85;color:var(--ink);}
+
+  /* 底部两按钮 */
+  .btn-row{display:flex;gap:12px;margin-top:4px;}
+  .btn-chat{
+    flex:1;background:var(--mint);color:var(--ink);border:none;font:inherit;font-weight:700;
+    font-size:14px;letter-spacing:1px;padding:13px 10px;border-radius:24px;
+    cursor:pointer;box-shadow:0 3px 0 #6fb89a;transition:all .15s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-chat:active{transform:translateY(2px);box-shadow:0 1px 0 #6fb89a;}
+  .btn-restart{
+    flex:1;background:var(--pink);color:var(--ink);border:none;font:inherit;font-weight:700;
+    font-size:14px;letter-spacing:1px;padding:13px 10px;border-radius:24px;
+    cursor:pointer;box-shadow:0 3px 0 #d97a8e;transition:all .15s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-restart:active{transform:translateY(2px);box-shadow:0 1px 0 #d97a8e;}
+  .result-footer{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:14px;line-height:1.8;letter-spacing:0.5px;}
+
+  /* 弹窗 */
+  .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);
+    display:flex;align-items:center;justify-content:center;z-index:999;animation:fadeIn .2s ease;}
+  .modal-card{background:#fff;border-radius:20px;padding:28px 24px;max-width:280px;width:85%;
+    text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.15);}
+  .modal-text{font-size:14px;line-height:1.9;color:var(--ink);margin-bottom:18px;}
+  .modal-btn{background:var(--purple);color:#fff;border:none;font:inherit;font-weight:700;
+    font-size:14px;padding:10px 28px;border-radius:20px;cursor:pointer;
+    box-shadow:0 2px 0 #8B5A9E;-webkit-tap-highlight-color:transparent;}
+  .modal-btn:active{transform:translateY(1px);}
+
+  .hide{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- BGM按钮 -->
+  <button id="bgmToggle" title="背景音乐：D-项目歌曲" aria-label="切换 BGM">🔇 BGM</button>
+
+  <!-- ===== 答题区（直接显示） ===== -->
+  <div id="quizScreen">
+    <div class="header">
+      <h1>小麦想了解<span class="highlight">你</span>多一点</h1>
+      <div class="sub" id="subtitle"></div>
+    </div>
+
+    <div class="progress-wrap">
+      <span id="progressLabel">1/5</span>
+      <div class="progress-bar"><i id="progressBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="card-stack" id="cardStack"></div>
+
+    <div class="hint-text" id="hintText">👆 选一个答案，看看小麦怎么说</div>
+  </div>
+
+    <!-- ===== 结果页 ===== -->
+  <div id="resultScreen" class="result-screen hide">
+    <div class="result-card">
+      <div class="clip purple" style="top:-6px;left:26px;transform:rotate(-18deg);"></div>
+      <div class="clip pink" style="top:-4px;right:30px;transform:rotate(20deg);"></div>
+
+      <!-- 标题 -->
+      <div class="result-title">欢迎入坑小麦！！</div>
+
+      <!-- 人物图片 -->
+      <div class="chara-img-wrap">
+        <img src="images/avatar2.jpg" id="charaImg" alt="小麦">
+      </div>
+
+      <!-- 分数 -->
+      <div class="score-wrap">
+        <div><span class="score-label" id="scoreLabel">—</span></div>
+      </div>
+
+      <!-- 关于小麦 -->
+      <div class="about-section">
+        <div class="about-title">关于小麦</div>
+        <div class="about-text">入坑不亏，我是小麦大人，本名麦泱，小名阿沙沙（没错奶奶给起的）。ENFP本P，喜欢打游戏刷番追冷门，高中漫研社社长，语文成绩...还可以吧？如果你愿意，我们可以从今天开始做搭子，我想多了解你一点！</div>
+      </div>
+
+      <!-- 按钮行 -->
+      <div class="btn-row">
+        <button class="btn-chat" onclick="goChat()">和小麦聊天 💬</button>
+        <button class="btn-restart" onclick="startQuiz()">再来一次 ▶</button>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+
+<audio id="bgm" loop preload="none" src="assets/D-项目歌曲.mp3"></audio>
+
+<script>
+
+// ===== 小麦随机头像 =====
+const XIAOMAI_AVATARS = [
+  'images/avatar2.jpg',
+  'images/avatar3.jpg',
+  'images/tier01.jpg',
+  'images/tier02.jpg',
+  'images/tier03.jpg',
+  'images/tier04.jpg',
+  'images/tier05.jpg',
+  'images/egg_high.jpg',
+  'images/egg_low.jpg',
+];
+function getRandomAvatar() {
+  return XIAOMAI_AVATARS[Math.floor(Math.random() * XIAOMAI_AVATARS.length)];
+}
+function setAvatar(imgId) {
+  const img = document.getElementById(imgId);
+  if (!img) return;
+  const src = getRandomAvatar();
+  img.onerror = function() { this.style.display='none'; this.parentElement.innerHTML='🌾'; };
+  img.onload  = function() { this.style.display='block'; };
+  img.src = src;
+}
+
+// ===== 随机副标题 =====
+const SUBTITLE_OPTIONS = [
+  '嘿，想和你聊聊天',
+  '五道题，看看我们合不合拍',
+  '今天，想了解你一点点',
+  '来，让我猜猜你是什么样的人',
+  '你准备好了吗？我要开始提问咯 👀',
+  '没什么特别的，就是想认识你',
+];
+function setRandomSubtitle() {
+  const el = document.getElementById('subtitle');
+  if (!el) return;
+  el.textContent = SUBTITLE_OPTIONS[Math.floor(Math.random() * SUBTITLE_OPTIONS.length)];
+}
+
+/* ============================================================
+   「想了解小麦多一点」回合制问答
+   题库来源：assets/question-bank.json
+   每次随机抽取5道题
+   ============================================================ */
+
+// ===== 完整题库（从 question-bank.json 嵌入）=====
+const QUESTION_BANK = [
+  // --- 用户信息收集 ---
+  { cat:"关于你", q:"你现在的身份是？", opts:[
+    {text:"学生", reply:"我也是！！我是北京F大大一的学生，文学社的～🎓"},
+    {text:"上班族", reply:"辛苦啦！我也是'打工人'，不过我打的是电竞工😂 每天打游戏打到眼睛疼...你上班累不累？"},
+    {text:"自由职业", reply:"哇好酷！我也想过自由职业，天天窝在杭州富阳老家打游戏看番剧，想睡几点睡几点🎮 羡慕ing"}
+  ]},
+  { cat:"关于你", q:"你的年龄段是？", opts:[
+    {text:"18岁以下", reply:"年轻真好！我刚好18，大一新鲜人一枚🌸"},
+    {text:"18-25岁", reply:"同龄人！我也是18岁，ENFP快乐小狗一枚🐕"},
+    {text:"25岁以上", reply:"那你是成熟的大人了！我还是大一新生😅 不过年龄不影响我们做搭子对吧～"}
+  ]},
+  { cat:"关于你", q:"你平时生活在？", opts:[
+    {text:"一线城市", reply:"大城市！我现在在北京上学，从杭州富阳来的，刚开始各种不适应🏙️ 地铁挤到怀疑人生..."},
+    {text:"二三线城市", reply:"二三线生活节奏刚刚好～我老家是杭州富阳的，舒服得很🍃 羡慕你还能享受这种生活"},
+    {text:"小县城/乡镇", reply:"小地方也有小地方的好！我奶奶就在富阳老家，每次回去她都给做好吃的👵 想奶奶了..."}
+  ]},
+  { cat:"关于你", q:"你现在最头疼的事情是？", opts:[
+    {text:"学业/工作压力", reply:"我懂！我虽然现在大一还好，但高中当漫研社社长的时候又要管社团又要顾学业，累瘫😭 加油撑过去！"},
+    {text:"人际关系", reply:"人际关系确实头疼...还好我是ENFP 🦋 但认识新朋友之前也会偷偷紧张"},
+    {text:"不知道想要什么", reply:"迷茫期很正常啦！我大一也还在摸索，想加乐队又舍不得文学社🎸 慢慢找呗，不急～"}
+  ]},
+  { cat:"关于你", q:"你觉得自己是早鸟还是夜猫子？", opts:[
+    {text:"早睡早起", reply:"养生达人！我是夜猫子，向你学习～"},
+    {text:"夜猫子", reply:"夜猫子联盟！晚上脑子最活跃，各种奇思妙想💡 然后白天上课困成狗..."},
+    {text:"看心情", reply:"我也是！有番要追就通宵，没劲就早睡😴 作息全看当天有没有好看的更新～"}
+  ]},
+
+  // --- 聊天偏好 ---
+  { cat:"聊天偏好", q:"你更喜欢哪种聊天氛围？", opts:[
+    {text:"轻松搞笑", reply:"那我以后多说点烂梗，准备好被我冷到🥶"},
+    {text:"走心治愈", reply:"那我以后多给你讲温暖小故事，做你的小太阳☀️ 不开心的时候随时找我哦～我奶奶说安慰人是我的天赋"},
+    {text:"刺激互怼", reply:"毒舌模式启动！小心被我怼哭哦😏 我怼人可是跟大麦学的，功力深厚～他大我3岁，从小怼到大"}
+  ]},
+  { cat:"聊天偏好", q:"你希望我怎样称呼你？", opts:[
+    {text:"正常名字就好", reply:"收到！那我以后正经叫你名字～"},
+    {text:"起个专属昵称", reply:"好耶！我最擅长起外号了！我哥叫大麦，我叫小麦，你的昵称让我想想...🤔"},
+    {text:"随意就好", reply:"那我就放飞自我了！想到什么叫什么"}
+  ]},
+  { cat:"聊天偏好", q:"聊天时你更喜欢？", opts:[
+    {text:"我多说，你听着", reply:"那我以后多说点！我话超多，💬 聊三小时不带停的～"},
+    {text:"互相分享", reply:"互相分享最棒了！我也想知道你的故事🤝 我奶奶说会倾听的人最有魅力"},
+    {text:"听你说", reply:"那我就做个好听众"}
+  ]},
+  { cat:"聊天偏好", q:"你介意我发语音/打电话吗？", opts:[
+    {text:"完全不介意", reply:"太好了！我声音超甜的～"},
+    {text:"文字就好", reply:"那我多发点表情包弥补没有语气的遗憾🤝"},
+    {text:"看情况", reply:"灵活派～我也是，熟了就语音 看咱俩的默契度了哈哈哈"}
+  ]},
+  { cat:"聊天偏好", q:"你更喜欢聊什么话题？", opts:[
+    {text:"日常琐事", reply:"日常最治愈了！我今天吃了什么、看到了什么猫、上课打瞌睡了几次🐱 都告诉你～"},
+    {text:"兴趣爱好", reply:"兴趣同好！游戏动漫音乐番剧，随便聊🎮"},
+    {text:"深度话题", reply:"深度派！虽然我平时看着没心没肺，但聊哲学人生我也行的🤔"}
+  ]},
+
+  // --- 兴趣爱好 ---
+  { cat:"兴趣爱好", q:"你平时打游戏吗？", opts:[
+    {text:"重度玩家", reply:"战友！！！🎮我什么类型都玩，从3A到独立游戏都有涉猎！"},
+    {text:"偶尔玩玩", reply:"休闲玩家也不错！我每次一玩消消乐，抓大鹅这些就停不下来..."},
+    {text:"不玩", reply:"没关系！等你和我分享你的其他爱好～"}
+  ]},
+  { cat:"兴趣爱好", q:"你喜欢看动漫/追剧吗？", opts:[
+    {text:"二次元宅", reply:"同好！！！高中漫研社社长在此👩‍🎤 冷门番我如数家珍，下次给你安利小众宝藏！"},
+    {text:"追剧党", reply:"追剧也很快乐！我最近在看《迷宫饭》，冒险+美食巨好看"},
+    {text:"很少看", reply:"那我给你安利！从入门到入坑只需要一部好番🎬"}
+  ]},
+  { cat:"兴趣爱好", q:"你喜欢什么类型的音乐？", opts:[
+    {text:"流行/J-Pop", reply:"我也！最近单曲循环YOASOBI，夜に駆けるyyds🎶 我准备加大学乐队呢，虽然还在纠结..."},
+    {text:"二次元/ACG", reply:"同好！！！下次给你安利我的宝藏歌单🎧 从燃系到催泪系应有尽有，漫研社社长认证！"},
+    {text:"安静纯音乐", reply:"写作业的时候我也喜欢听，很安心🎹 钢琴曲+雨声白噪音，专注度拉满！适合我这种需要静心的人"}
+  ]},
+  { cat:"兴趣爱好", q:"你喜欢看小说/漫画吗？", opts:[
+    {text:"小说党", reply:"同道中人！但我偏爱小众文学，主流畅销书反而看得少"},
+    {text:"漫画党", reply:"漫画赛高！日漫国漫韩漫通吃📖 最近在看一部超冷门的..."},
+    {text:"都看", reply:"全能型读者！我也是，小说漫画番剧游戏全都要🌟 什么好看追什么"}
+  ]},
+  { cat:"兴趣爱好", q:"你有在追的UP主/主播吗？", opts:[
+    {text:"有很多", reply:"同好！我也关注了一堆游戏区和动画区UP主📺 不"},
+    {text:"偶尔看看", reply:"偶尔看也挺好的！我是一阵一阵的，发现宝藏UP就狂刷，刷完就撤😅"},
+    {text:"不怎么看", reply:"那我以后看到好玩的视频分享给你！"}
+  ]},
+  { cat:"兴趣爱好", q:"你喜欢尝试新事物吗？", opts:[
+    {text:"超喜欢", reply:"我也是，我今天想学吉他明天想学画画🎨 虽然三分钟热度..."},
+    {text:"看情况", reply:"感兴趣就冲，没感觉就躺😴 不过我对游戏和动漫永远有热情！"},
+    {text:"比较保守", reply:"喜欢窝在舒适区🛋️ 各有各的好～"}
+  ]},
+
+  // --- 生活方式 ---
+  { cat:"生活方式", q:"你的周末一般怎么过？", opts:[
+    {text:"睡到自然醒", reply:"周末不睡到中午等于没过！"},
+    {text:"出门社交", reply:"社交达人！我是宅家派，出门全靠缘分😅 除非有人请我吃好吃的...或者去漫展！"},
+    {text:"打游戏刷剧", reply:"那我们就是异父异母的亲姐妹了！🎮 周末=游戏马拉松+番剧马拉松！"}
+  ]},
+  { cat:"生活方式", q:"你更喜欢哪种天气？", opts:[
+    {text:"阳光明媚", reply:"Sunny day 心情也会变好！"},
+    {text:"阴天多云", reply:"阴天适合窝着，我也喜欢"},
+    {text:"下雨天", reply:"雨声ASMR！同道中人，一起听雨吧🌧️"}
+  ]},
+  { cat:"生活方式", q:"你最喜欢的食物类型？", opts:[
+    {text:"甜食", reply:"蛋糕奶茶我全都要！甜就是正义🍰 我奶奶做的红糖糍粑是世界上最好吃的！想家了..."},
+    {text:"辣食", reply:"我也！无辣不欢，越辣越过瘾🌶️"},
+    {text:"清淡养生", reply:"养生派，我也要向你学习，多喝热水🍵 但我可能坚持不了三天...求监督！"}
+  ]},
+  { cat:"生活方式", q:"你压力大的时候怎么解压？", opts:[
+    {text:"打游戏", reply:"那我们可以一起开黑！我辅助贼6，奶量拉满那种🎮"},
+    {text:"吃东西", reply:"我也是，甜食治愈一切！蛋糕奶茶我全都要🍰"},
+    {text:"找人聊天", reply:"那找我就对了！保证把你聊开心😊 聊到天亮都没问题！"}
+  ]},
+  { cat:"生活方式", q:"你更喜欢猫还是狗？", opts:[
+    {text:"猫", reply:"我也是！猫奴万岁，高冷又可爱🐱 想养一只橘猫！"},
+    {text:"狗", reply:"狗狗派！金毛和柯基我都好喜欢！虽然我哥说养宠物太麻烦..."},
+    {text:"都喜欢", reply:"我也是！毛茸茸赛高，想rua🐾"}
+  ]},
+
+  // --- 性格情感 ---
+  { cat:"性格情感", q:"你觉得自己是哪种性格？", opts:[
+    {text:"外向活泼", reply:"我是ENFP！但认识新朋友之前会偷偷紧张...表面社牛内心社恐"},
+    {text:"内向安静", reply:"那我以后多说点，你听着就好，安静的陪伴超治愈的～我奶奶就是这样的人"},
+    {text:"看情况切换", reply:"我也是！熟人面前放飞自我，陌生人面前社恐😅"}
+  ]},
+  { cat:"性格情感", q:"你会因为什么而感动？", opts:[
+    {text:"亲情", reply:"我也是，想奶奶了...每次回家她都做好多好吃的～"},
+    {text:"友情", reply:"朋友就是宝藏！我最好的闺蜜是高中漫研社认识的👯‍♀️"},
+    {text:"爱情", reply:"我也相信真爱，虽然还没遇到😳"}
+  ]},
+  { cat:"性格情感", q:"你平时怎么处理情绪？", opts:[
+    {text:"自己消化", reply:"我也是，但有时候憋久了会炸💢 不开心可以和我说"},
+    {text:"找朋友倾诉", reply:"有什么都可以跟我说🌳 我保密工作做得很好的～"},
+    {text:"转移注意力", reply:"我也是，打一局游戏就好了，输了就再开一局😂 逃避虽然可耻但有用～"}
+  ]},
+  { cat:"性格情感", q:"你觉得自己最大的优点是？", opts:[
+    {text:"乐观开朗", reply:"同款优点！我是乐天派ENFP，不过我哥说我是'盲目的乐观'...管他呢！"},
+    {text:"细心体贴", reply:"细心的人超棒的！我其实也会注意到朋友的情绪变化💝 只是不太会表达..."},
+    {text:"有主见", reply:"有主见很好啊！不随波逐流，坚持自己喜欢的～"}
+  ]},
+  { cat:"性格情感", q:"你最怕的事情是？", opts:[
+    {text:"孤独", reply:"我懂...虽然我看起来很社交，但其实也怕没人懂我😢 所以遇到聊得来的人特别珍惜！"},
+    {text:"失败", reply:"我也怕！尤其是语文以外的科目...偏科选手的痛📉"},
+    {text:"被遗忘", reply:"...我也希望自己在乎的人都能记得我🌸 所以我会努力制造回忆，不会忘记你的"}
+  ]},
+
+  // --- 脑洞趣味 ---
+  { cat:"脑洞趣味", q:"如果拥有超能力，你想要？", opts:[
+    {text:"读心术", reply:"那我的小心思岂不是都被你看光了...好害羞😳 不过我也想知道你在想什么～！"},
+    {text:"瞬移", reply:"超方便的！想吃啥随时去，还能去演唱会前排🎤"},
+    {text:"时间停止", reply:"时间停止...那我就能无限打游戏了！🎮"}
+  ]},
+  { cat:"脑洞趣味", q:"如果可以去一个地方旅行，你会选？", opts:[
+    {text:"海边", reply:"大海！我还没看过真正的大海，好想去🏖️"},
+    {text:"山里/森林", reply:"自然系！我也喜欢森林，感觉能遇到精灵🌲 或者一只会说话的猫...动漫看太多了哈哈哈"},
+    {text:"繁华都市", reply:"我也是city girl，逛街吃美食🏙️ 拉面+章鱼烧+可丽饼，北京待久了想回杭州逛吃"}
+  ]},
+  { cat:"脑洞趣味", q:"如果变成动物，你想当？", opts:[
+    {text:"猫", reply:"猫派！🐱 我如果变猫一定要当橘猫，每天躺着等投喂，完美猫生～"},
+    {text:"鸟", reply:"我也想过，从高处看世界一定很美🕊️ 不过我怕高...在游戏里飞飞就好了"},
+    {text:"海豚", reply:"海豚智商超高，在水里游来游去也很自由，不像我要赶早八..."}
+  ]},
+  { cat:"脑洞趣味", q:"如果穿越到动漫世界，你想去？", opts:[
+    {text:"异世界冒险", reply:"打怪升级开宝箱，想想就刺激⚔️"},
+    {text:"校园日常", reply:"好治愈！一起上学放学、社团活动、文化祭🎌"},
+    {text:"科幻未来", reply:"科幻派！全息游戏、太空旅行🚀 好酷呀～"}
+  ]},
+  { cat:"脑洞趣味", q:"如果可以拥有一个技能，你希望是？", opts:[
+    {text:"永远不死", reply:"永生者！可以看遍所有番剧和游戏的结局🎮 不过身边的人都会离开，有点寂寞...还是算了"},
+    {text:"过目不忘", reply:"emm不好说诶📚 记得太多事情会很累，选择性遗忘也是种幸福～"},
+    {text:"隐身", reply:"隐身超酷的！可以偷偷去漫展不用排队，或者旁听别人的八卦😏"}
+  ]}
+];
+
+// ===== 每次抽取的题目数 =====
+const DRAW_COUNT = 5;
+
+// ===== 状态 =====
+let QUESTIONS = [];       // 本次抽中的题目
+let currentQ = 0;
+let userChoices = [];
+let isAnimating = false;
+let touchStartX = 0;
+let touchStartY = 0;
+
+// ===== 随机抽取题目 =====
+function drawQuestions() {
+  // Fisher-Yates 洗牌，取前5道
+  const pool = QUESTION_BANK.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, DRAW_COUNT);
+}
+
+// ===== 初始化 / 开始答题 =====
+function startQuiz() {
+  setRandomSubtitle();
+  QUESTIONS = drawQuestions();
+  currentQ = 0;
+  userChoices = [];
+  document.getElementById('resultScreen').classList.add('hide');
+  document.getElementById('quizScreen').classList.remove('hide');
+  buildCards();
+  showQuestion(0);
+}
+
+// ===== 构建卡片DOM =====
+function buildCards() {
+  const stack = document.getElementById('cardStack');
+  stack.innerHTML = '';
+  QUESTIONS.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'slide-card behind';
+    card.id = 'card_' + idx;
+    card.innerHTML = buildCardHTML(q, idx);
+    stack.appendChild(card);
+  });
+}
+
+// ===== 单张卡片HTML =====
+function buildCardHTML(q, idx) {
+  const optsHTML = q.opts.map((opt, i) =>
+    `<button class="opt-btn" id="opt_${idx}_${i}" ontouchstart="event.stopPropagation()" onclick="selectOption(${idx},${i})">${opt.text}</button>`
+  ).join('');
+
+  return `
+    <div class="clip pink" style="top:-6px;left:28px;transform:rotate(-20deg);pointer-events:none;"></div>
+    <div class="clip yellow" style="top:-4px;left:50px;transform:rotate(14deg);height:24px;pointer-events:none;"></div>
+    <div class="clip mint" style="top:-8px;right:38px;transform:rotate(24deg);pointer-events:none;"></div>
+    <div class="card-tag"><span class="dot">●</span> 第 ${idx+1}/${QUESTIONS.length} 题 <span class="cat-badge">${q.cat}</span></div>
+    <div class="question-area">
+      <div class="question-text">${q.q}</div>
+      <div class="options">${optsHTML}</div>
+    </div>
+    <div class="reply-area" id="reply_${idx}">
+      <div class="xiaomai-row">
+        <div class="xiaomai-avatar"><img src="" id="xiaomaiAvatarImg_${idx}" alt="小麦"></div>
+        <div class="xiaomai-bubble" id="bubble_${idx}"></div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== 显示第N题 =====
+function showQuestion(idx) {
+  currentQ = idx;
+  const pct = ((idx) / QUESTIONS.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = (idx + 1) + '/' + QUESTIONS.length;
+
+  QUESTIONS.forEach((_, i) => {
+    const c = document.getElementById('card_' + i);
+    if (!c) return;
+    c.classList.remove('active','behind','slide-out-left','slide-out-right');
+    if (i === idx) {
+      c.classList.add('active');
+      c.style.zIndex = 10;
+    } else if (i < idx) {
+      c.classList.add('slide-out-left');
+      c.style.zIndex = 1;
+    } else {
+      c.classList.add('behind');
+      c.style.zIndex = 1;
+    }
+  });
+
+  document.getElementById('hintText').textContent = '👆 选一个答案，看看小麦怎么说';
+  isAnimating = false;
+}
+
+// ===== 用户选择 =====
+function selectOption(qIdx, optIdx) {
+  if (isAnimating) return;
+  if (qIdx !== currentQ) return;
+
+  const q = QUESTIONS[qIdx];
+
+  userChoices.push({
+    qIndex: qIdx,
+    optIndex: optIdx,
+    qText: q.q,
+    optText: q.opts[optIdx].text,
+    cat: q.cat
+  });
+
+  q.opts.forEach((_, i) => {
+    const btn = document.getElementById('opt_' + qIdx + '_' + i);
+    if (!btn) return;
+    if (i === optIdx) {
+      btn.classList.add('selected');
+    } else {
+      btn.classList.add('disabled');
+    }
+    btn.style.pointerEvents = 'none';
+  });
+
+  const reply = q.opts[optIdx].reply;
+  const bubble = document.getElementById('bubble_' + qIdx);
+  const replyArea = document.getElementById('reply_' + qIdx);
+  bubble.textContent = reply;
+  setAvatar('xiaomaiAvatarImg_' + qIdx);
+  replyArea.classList.add('show');
+
+
+
+  isAnimating = true;
+  setTimeout(() => { advanceToNext(); }, 1800);
+}
+
+// ===== 切换到下一题 =====
+function advanceToNext() {
+  if (currentQ >= QUESTIONS.length - 1) {
+    showResult();
+    return;
+  }
+  const nextIdx = currentQ + 1;
+
+  const currCard = document.getElementById('card_' + currentQ);
+  currCard.classList.remove('active');
+  currCard.classList.add('slide-out-left');
+  currCard.style.zIndex = 5;
+
+  const nextCard = document.getElementById('card_' + nextIdx);
+  nextCard.classList.remove('behind','slide-out-left','slide-out-right');
+  nextCard.classList.add('active');
+  nextCard.style.zIndex = 10;
+
+  const pct = ((nextIdx) / QUESTIONS.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = (nextIdx + 1) + '/' + QUESTIONS.length;
+
+  currentQ = nextIdx;
+  setRandomSubtitle();
+  isAnimating = false;
+  document.getElementById('hintText').textContent = '👆 选一个答案，看看小麦怎么说';
+
+}
+
+// ===== 结果页 =====
+// 小麦风格随机标签
+const XIAOMAI_LABELS = [
+  '完全是亲人来的～',
+  '一眼就对味了！',
+  '电子好朋友认证✓',
+  '搭子认证✓',
+  '一见如故那种感觉',
+  '我们要成为很好的朋友的',
+  '缘分天注定没错了',
+  '下一秒就能聊三小时那种',
+];
+
+function showResult() {
+  document.getElementById('quizScreen').classList.add('hide');
+  document.getElementById('resultScreen').classList.remove('hide');
+  setAvatar('charaImg');
+
+  // 随机取一条标签
+  const label = XIAOMAI_LABELS[Math.floor(Math.random() * XIAOMAI_LABELS.length)];
+  document.getElementById('scoreLabel').textContent = '「' + label + '」';
+
+  // 隐藏分数数字（不再展示）
+  const scoreWrapNum = document.getElementById('scoreNum');
+  if (scoreWrapNum) {
+    scoreWrapNum.parentElement.style.display = 'none';
+  }
+}
+
+
+
+// ===== 去和小麦聊天（配置跳转地址）=====
+function goChat() {
+  var url = 'https://qun.qq.com/qunpro/robot/qunshare?robot_appid=3889687544&robot_uin=102775739';
+  try {
+    var win = window.open(url, '_blank');
+    if (!win || win.closed || typeof win.closed === 'undefined') {
+      try { window.top.location.href = url; }
+      catch (e) { window.location.href = url; }
+    }
+  } catch (e) {
+    window.location.href = url;
+  }
+}
+
+// ===== 再来一次 → 弹窗 =====
+
+/* ===== 触摸滑动手势 ===== */
+const stack = document.getElementById('cardStack');
+
+stack.addEventListener('touchstart', function(e) {
+  if (isAnimating) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+stack.addEventListener('touchend', function(e) {
+  if (isAnimating) return;
+  if (!touchStartX) return;
+
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0 && currentQ < QUESTIONS.length - 1) {
+      skipToNext();
+    } else if (dx > 0 && currentQ > 0) {
+      goToPrev();
+    }
+  }
+  touchStartX = 0;
+  touchStartY = 0;
+}, { passive: true });
+
+// ===== 跳过此题（左滑）=====
+function skipToNext() {
+  if (isAnimating) return;
+  if (currentQ >= QUESTIONS.length - 1) {
+    showResult();
+    return;
+  }
+  userChoices.push({
+    qIndex: currentQ,
+    optIndex: -1,
+    qText: QUESTIONS[currentQ].q,
+    optText: '（跳过）',
+    cat: QUESTIONS[currentQ].cat
+  });
+  isAnimating = true;
+  setTimeout(() => { advanceToNext(); }, 100);
+}
+
+// ===== 回到上一题（右滑）=====
+function goToPrev() {
+  if (isAnimating) return;
+  if (currentQ <= 0) return;
+
+  if (userChoices.length > 0 && userChoices[userChoices.length - 1].qIndex === currentQ) {
+    userChoices.pop();
+  }
+  if (userChoices.length > 0 && userChoices[userChoices.length - 1].qIndex === currentQ - 1) {
+    userChoices.pop();
+  }
+
+  const prevIdx = currentQ - 1;
+
+  const currCard = document.getElementById('card_' + currentQ);
+  currCard.classList.remove('active');
+  currCard.classList.add('slide-out-right');
+  currCard.style.zIndex = 5;
+
+  const prevCard = document.getElementById('card_' + prevIdx);
+  prevCard.classList.remove('slide-out-left','slide-out-right','behind');
+  prevCard.classList.add('active');
+  prevCard.style.zIndex = 10;
+
+  const prevQ = QUESTIONS[prevIdx];
+  prevQ.opts.forEach((_, i) => {
+    const btn = document.getElementById('opt_' + prevIdx + '_' + i);
+    if (!btn) return;
+    btn.classList.remove('selected','disabled');
+    btn.style.pointerEvents = '';
+  });
+  const prevReply = document.getElementById('reply_' + prevIdx);
+  if (prevReply) prevReply.classList.remove('show');
+
+  const pct = ((prevIdx) / QUESTIONS.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = (prevIdx + 1) + '/' + QUESTIONS.length;
+
+  currentQ = prevIdx;
+  isAnimating = false;
+  document.getElementById('hintText').textContent = '👆 选一个答案，看看小麦怎么说';
+}
+
+/* ===== BGM ===== */
+const bgm = document.getElementById('bgm');
+const bgmBtn = document.getElementById('bgmToggle');
+let bgmPlaying = false;
+
+bgmBtn.onclick = () => {
+  if (bgmPlaying) {
+    bgm.pause();
+    bgmPlaying = false;
+    bgmBtn.textContent = '🔇 BGM';
+    bgmBtn.classList.remove('on');
+  } else {
+    bgm.play().then(() => {
+      bgmPlaying = true;
+      bgmBtn.textContent = '🔊 BGM';
+      bgmBtn.classList.add('on');
+    }).catch(() => {
+      bgm.load();
+      bgm.play().then(() => {
+        bgmPlaying = true;
+        bgmBtn.textContent = '🔊 BGM';
+        bgmBtn.classList.add('on');
+      });
+    });
+  }
+};
+
+/* ===== 初始化：直接进入答题 ===== */
+startQuiz();
+</script>
+
+</body>
+</html>
