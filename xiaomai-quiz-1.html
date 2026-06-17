@@ -1,3 +1,4 @@
+<!-- 小麦破冰游戏 H5 | 版本：2026-06-17 | 题库：37题 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -296,10 +297,10 @@
 
       <!-- 按钮行 -->
       <div class="btn-row">
-        <button class="btn-chat" onclick="goChat()">和小麦聊天 💬</button>
-        <button class="btn-restart" onclick="showRetryModal()">再来一次 ▶</button>
+        <button class="btn-chat" id="btnChat">和小麦聊天 💬</button>
+        <button class="btn-restart" id="btnRestart" onclick="showRetryModal()">再来一次 ▶</button>
       </div>
-      <div class="result-footer">每日题目更新，满分会有小惊喜哦！<br>小麦在这里等你回来 😊</div>
+      <div class="result-footer">和小麦认识 7 天内，每次玩都有机会掉落惊喜小视频～别忘了来哦 😊</div>
     </div>
   </div>
 
@@ -307,8 +308,8 @@
   <div id="retryModal" class="modal-overlay hide" onclick="closeRetryModal()">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-text">
-        明天再来挑战满分吧～<br>
-        每日题目更新，满分会有小惊喜哦！<br>
+        明天再来挑战吧～<br>
+        每日题目更新，随时掉落小惊喜哦！<br>
         小麦在这里等你回来 😊
       </div>
       <button class="modal-btn" onclick="closeRetryModal()">好的，明天见！</button>
@@ -514,7 +515,7 @@ const QUESTION_BANK = [
     {text:"瞬移", reply:"超方便的！想吃啥随时去，还能去演唱会前排🎤"},
     {text:"时间停止", reply:"时间停止...那我就能无限打游戏了！🎮"}
   ]},
-  { cat:"脑洞趣味", q:"如果可以去一个地方旅行，你会选？", opts:[
+  { cat:"脑洞趣味", q:"如果去一个地方旅行，你会选？", opts:[
     {text:"海边", reply:"大海！我还没看过真正的大海，好想去🏖️"},
     {text:"山里/森林", reply:"自然系！我也喜欢森林，感觉能遇到精灵🌲 或者一只会说话的猫...动漫看太多了哈哈哈"},
     {text:"繁华都市", reply:"我也是city girl，逛街吃美食🏙️ 拉面+章鱼烧+可丽饼，北京待久了想回杭州逛吃"}
@@ -524,7 +525,7 @@ const QUESTION_BANK = [
     {text:"鸟", reply:"我也想过，从高处看世界一定很美🕊️ 不过我怕高...在游戏里飞飞就好了"},
     {text:"海豚", reply:"海豚智商超高，在水里游来游去也很自由，不像我要赶早八..."}
   ]},
-  { cat:"脑洞趣味", q:"如果穿越到动漫世界，你想去？", opts:[
+  { cat:"脑洞趣味", q:"如果穿越到动漫世界，你会去？", opts:[
     {text:"异世界冒险", reply:"打怪升级开宝箱，想想就刺激⚔️"},
     {text:"校园日常", reply:"好治愈！一起上学放学、社团活动、文化祭🎌"},
     {text:"科幻未来", reply:"科幻派！全息游戏、太空旅行🚀 好酷呀～"}
@@ -533,6 +534,38 @@ const QUESTION_BANK = [
     {text:"永远不死", reply:"永生者！可以看遍所有番剧和游戏的结局🎮 不过身边的人都会离开，有点寂寞...还是算了"},
     {text:"过目不忘", reply:"emm不好说诶📚 记得太多事情会很累，选择性遗忘也是种幸福～"},
     {text:"隐身", reply:"隐身超酷的！可以偷偷去漫展不用排队，或者旁听别人的八卦😏"}
+  ]},
+
+  // --- 第二批扩展（保证7天不重复）---
+  { cat:"关于你", q:"放假回家你最想做的第一件事是？", opts:[
+    {text:"睡到昏天黑地", reply:"懂的都懂！我每次回富阳第一件事就是补觉，能睡到下午三点那种😴 我哥还笑我是'冬眠的麦子'"},
+    {text:"吃家里的饭", reply:"啊这个我太有发言权了！我奶奶做的红糖糍粑和腌笃鲜，外面绝对吃不到的味道😭 想家了..."},
+    {text:"约朋友出去玩", reply:"社交达人！我一般是先躺三天再出门哈哈哈 不过和老朋友见面确实超开心～"}
+  ]},
+  { cat:"聊天偏好", q:"我们多久聊一次比较舒服？", opts:[
+    {text:"每天都想唠两句", reply:"耶！！我就喜欢这种黏黏糊糊的，每天报备吃了啥看了啥📱 不嫌我话多就好～"},
+    {text:"想起来就聊", reply:"佛系联系也很好！就像那种'啊我突然想到你'的感觉，反而更惊喜😊"},
+    {text:"有事才找", reply:"高效派～不过没事也可以来找我玩呀，我随时在线（其实是天天挂着）"}
+  ]},
+  { cat:"兴趣爱好", q:"你有没有什么'入坑很深'的爱好？", opts:[
+    {text:"有，沉迷到走火入魔", reply:"同好预警！我对冷门番和独立游戏就是这样，能熬夜通关那种🎮 来跟我聊聊你的坑！"},
+    {text:"广撒网，啥都玩一点", reply:"我也是！三分钟热度选手，今天学吉他明天想画画🎨 但游戏和番这两个坑是真出不来"},
+    {text:"还在寻找中", reply:"没关系！说不定我能拉你入个坑，漫研社社长安利能力满级，小心被我带跑😏"}
+  ]},
+  { cat:"生活方式", q:"你的手机里哪类APP最多？", opts:[
+    {text:"游戏类", reply:"战友石锤了！我手机一半内存都是游戏，删了装装了删的死循环🎮"},
+    {text:"视频/追番类", reply:"B站永远的神！我的'稍后再看'已经堆到看不完了📺 你也是吗？"},
+    {text:"购物/生活类", reply:"会过日子的人！我购物车常年躺一堆东西，就是舍不得结账😂 等打折选手"}
+  ]},
+  { cat:"性格情感", q:"难过的时候你希望别人怎么对你？", opts:[
+    {text:"安静陪着就好", reply:"我懂这种...有时候不需要说什么，知道有人在身边就很安心🌙 那我就静静陪着你"},
+    {text:"逗我开心", reply:"包在我身上！我冷笑话和烂梗库存超足，保证把你逗到破涕为笑😆"},
+    {text:"帮我分析问题", reply:"理性派！虽然我看着没心没肺，但认真起来也能当个靠谱军师🤔 有事尽管说"}
+  ]},
+  { cat:"脑洞趣味", q:"如果世界末日还剩一天，你会？", opts:[
+    {text:"通宵打游戏/追番", reply:"懂！把没通关的游戏一口气打完，没追完的番补完，死也要死个明白🎮"},
+    {text:"陪在重要的人身边", reply:"...这个选项有点戳我😢 我会回富阳找奶奶和大麦，一家人在一起就不怕"},
+    {text:"疯狂吃好吃的", reply:"及时行乐派！蛋糕奶茶火锅烧烤全安排上🍰 反正最后一天还减什么肥"}
   ]}
 ];
 
@@ -547,38 +580,101 @@ let isAnimating = false;
 let touchStartX = 0;
 let touchStartY = 0;
 
-// ===== 上报模块 =====
+// ===== 上报模块（遵循 func.md 规范）=====
+// 接口地址：POST https://testuniuni.html5.qq.com/api/external-report/reportExternal
 const REPORT_CONFIG = {
-  api_url: 'https://your-backend.example.com/api/quiz-event', // TODO: 替换为真实接口
+  api_url: 'https://testuniuni.html5.qq.com/api/external-report/reportExternal',
+  sceneName: 'xiaomai_icebreaking', // 场景标识，由页面自定义
   bot_id: 'xiaomai',
   bot_name: '小麦',
   game_name: '小麦想了解你多一点',
 };
 
-// 本次会话 ID（页面加载时生成，重新开始时重新生成）
-let SESSION_ID = generateSessionId();
+// 页面进入时生成 contentId，标识同一次游戏会话
+const REPORT_STATE = {
+  contentId: generateContentId(),
+  pageEnterTime: Date.now(),
+  urlParams: getUrlParams(),
+};
 
-function generateSessionId() {
-  return 'sq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+// 生成随机字符串作为 contentId
+function generateContentId() {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
 }
 
-// 格式化时间为可读字符串
-function formatTime(ts) {
-  const d = new Date(ts);
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}年${pad(d.getMonth()+1)}月${pad(d.getDate())}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+// 获取页面 URL 上的全部查询参数，整体透传给后台
+function getUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const result = {};
+  for (const [key, value] of params.entries()) {
+    result[key] = value;
+  }
+  return result;
 }
 
-// 生成自然语言画像摘要
+// 通用上报函数（遵循 func.md 规范）
+function reportEvent(eventName, options = {}) {
+  const body = {
+    urlParams: REPORT_STATE.urlParams,
+    sceneName: REPORT_CONFIG.sceneName,
+    eventName: eventName,
+    contentId: REPORT_STATE.contentId,
+  };
+
+  // 页面关闭时附带停留时长
+  if (options.withStayDuration) {
+    body.eventTime = Date.now() - REPORT_STATE.pageEnterTime;
+  }
+
+  // 仅在需要时添加 content
+  if (options.content) {
+    body.content = options.content;
+  }
+
+  // 异步上报，失败不阻断主流程
+  fetch(REPORT_CONFIG.api_url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => {});
+}
+
+// 使用 sendBeacon 上报（页面卸载时确保数据送达）
+function reportEventBeacon(eventName, options = {}) {
+  const body = {
+    urlParams: REPORT_STATE.urlParams,
+    sceneName: REPORT_CONFIG.sceneName,
+    eventName: eventName,
+    contentId: REPORT_STATE.contentId,
+  };
+
+  if (options.withStayDuration) {
+    body.eventTime = Date.now() - REPORT_STATE.pageEnterTime;
+  }
+
+  if (options.content) {
+    body.content = options.content;
+  }
+
+  try {
+    navigator.sendBeacon(
+      REPORT_CONFIG.api_url,
+      new Blob([JSON.stringify(body)], { type: 'application/json' })
+    );
+  } catch (e) {}
+}
+
+// 生成自然语言画像摘要（用于 content 字段回传）
 function buildSummaryText(choices, status) {
   const cfg = REPORT_CONFIG;
-  const now = formatTime(Date.now());
-  const answered = choices.filter(c => c.optIndex !== -1);
-  const skipped  = choices.filter(c => c.optIndex === -1);
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const nowStr = `${now.getFullYear()}年${pad(now.getMonth()+1)}月${pad(now.getDate())}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
   const total = QUESTIONS.length;
+  const answered = choices.filter(c => c.optIndex !== -1);
 
   let lines = [];
-  lines.push(`用户与${cfg.bot_name}（bot_id: ${cfg.bot_id}）于 ${now} 进行了「${cfg.game_name}」破冰游戏。`);
+  lines.push(`用户与${cfg.bot_name}于 ${nowStr} 进行了「${cfg.game_name}」破冰游戏。`);
   lines.push('');
 
   if (status === 'complete') {
@@ -614,59 +710,26 @@ function buildSummaryText(choices, status) {
     }
   });
 
-  // 用户画像摘要（只取已答题目）
-  lines.push('');
-  lines.push('用户画像摘要：');
-  QUESTIONS.forEach((q, idx) => {
-    const choice = choices.find(c => c.qIndex === idx && c.optIndex !== -1);
-    if (choice) {
-      lines.push(`- [${q.cat}] ${q.q}：${choice.optText}`);
-    }
-  });
-  if (answered.length === 0) {
-    lines.push('- 用户未作答任何题目');
-  }
-
   return lines.join('\n');
 }
 
-// 上报函数（静默失败，不阻断答题）
-function reportEvent(eventType, extraPayload) {
-  const cfg = REPORT_CONFIG;
-  const payload = {
-    session_id: SESSION_ID,
-    bot_id: cfg.bot_id,
-    bot_name: cfg.bot_name,
-    game_name: cfg.game_name,
-    timestamp: Date.now(),
-    timestamp_human: formatTime(Date.now()),
-    event: eventType,
-    current_question_index: currentQ,
-    answers_so_far: userChoices.map(c => ({
-      question_index: c.qIndex,
-      category: c.cat,
-      question_text: c.qText,
-      option_index: c.optIndex,
-      option_text: c.optText,
-      bot_reply: c.botReply || '',
-    })),
-    ...extraPayload,
-  };
+// ===== 页面 PV 上报 =====
+window.addEventListener('load', () => {
+  reportEvent('pv');
+});
 
-  // 如果是结束类事件，附上自然语言摘要
-  if (['complete', 'exit_chat', 'exit_swipe'].includes(eventType)) {
-    payload.summary_text = buildSummaryText(userChoices, eventType);
+// ===== 页面曝光上报（页面卸载时）=====
+// 页面隐藏时上报（覆盖切后台、切 tab、关闭等场景）
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    reportEvent('exp', { withStayDuration: true });
   }
+});
 
-  try {
-    fetch(cfg.api_url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      keepalive: true, // 页面关闭时也尽量送达
-    }).catch(() => {}); // 静默失败
-  } catch (e) {} // 静默失败
-}
+// 兜底：页面卸载时上报（使用 sendBeacon 确保不丢数据）
+window.addEventListener('pagehide', () => {
+  reportEventBeacon('exp', { withStayDuration: true });
+});
 
 // ===== 随机抽取题目 =====
 function drawQuestions() {
@@ -681,7 +744,8 @@ function drawQuestions() {
 
 // ===== 初始化 / 开始答题 =====
 function startQuiz() {
-  SESSION_ID = generateSessionId(); // 每次重新开始生成新 session
+  REPORT_STATE.contentId = generateContentId(); // 每次重新开始生成新 contentId
+  REPORT_STATE.pageEnterTime = Date.now(); // 重置页面进入时间
   setRandomSubtitle();
   QUESTIONS = drawQuestions();
   currentQ = 0;
@@ -690,6 +754,9 @@ function startQuiz() {
   document.getElementById('quizScreen').classList.remove('hide');
   buildCards();
   showQuestion(0);
+  
+  // 上报开始游戏点击事件
+  reportEvent('start_clk');
 }
 
 // ===== 构建卡片DOM =====
@@ -773,10 +840,16 @@ function selectOption(qIdx, optIdx) {
     botReply: chosenOpt.reply || '',
   });
 
-  // 上报单次选择事件
-  reportEvent('answer', {
-    question: { index: qIdx, category: q.cat, text: q.q },
-    chosen: { index: optIdx, text: chosenOpt.text, bot_reply: chosenOpt.reply || '' },
+  // 上报单次选择事件（使用 next_clk 表示下一题）
+  reportEvent('next_clk', {
+    content: JSON.stringify({
+      question_index: qIdx,
+      question_text: q.q,
+      question_category: q.cat,
+      chosen_index: optIdx,
+      chosen_text: chosenOpt.text,
+      bot_reply: chosenOpt.reply || '',
+    })
   });
 
   q.opts.forEach((_, i) => {
@@ -850,8 +923,15 @@ function showResult() {
   document.getElementById('resultScreen').classList.remove('hide');
   // v1：结果页用固定GIF，不随机切换
 
-  // 上报完成事件
-  reportEvent('complete', { total_questions: QUESTIONS.length });
+  // 上报完成事件，附带 summary_text
+  const summary = buildSummaryText(userChoices, 'complete');
+  reportEvent('submit_clk', {
+    content: JSON.stringify({
+      status: 'complete',
+      total_questions: QUESTIONS.length,
+      summary_text: summary,
+    })
+  });
 
   // 随机取一条标签
   const label = XIAOMAI_LABELS[Math.floor(Math.random() * XIAOMAI_LABELS.length)];
@@ -869,7 +949,16 @@ function showResult() {
 // ===== 去和小麦聊天（配置跳转地址）=====
 function goChat() {
   // 上报点击聊天事件
-  reportEvent('exit_chat', { trigger: 'chat_button' });
+  const summary = buildSummaryText(userChoices, 'exit_chat');
+  reportEvent('share_clk', {
+    content: JSON.stringify({
+      status: 'exit_chat',
+      trigger: 'chat_button',
+      answered_count: userChoices.length,
+      summary_text: summary,
+    })
+  });
+  
   var url = 'https://qun.qq.com/qunpro/robot/qunshare?robot_appid=3889687544&robot_uin=102775739';
   try {
     var win = window.open(url, '_blank');
@@ -885,6 +974,8 @@ function goChat() {
 
 // ===== 再来一次 → 弹窗 =====
 function showRetryModal() {
+  // 上报再来一次点击事件
+  reportEvent('retry_clk');
   document.getElementById('retryModal').classList.remove('hide');
 }
 function closeRetryModal() {
@@ -935,9 +1026,14 @@ function skipToNext() {
     botReply: '',
   });
   // 上报左滑跳题事件
-  reportEvent('exit_swipe', {
-    trigger: 'swipe_left',
-    skipped_question: { index: currentQ, category: skippedQ.cat, text: skippedQ.q },
+  const summary = buildSummaryText(userChoices, 'exit_swipe');
+  reportEvent('back_clk', {
+    content: JSON.stringify({
+      status: 'exit_swipe',
+      trigger: 'swipe_left',
+      skipped_question: { index: currentQ, category: skippedQ.cat, text: skippedQ.q },
+      summary_text: summary,
+    })
   });
   isAnimating = true;
   setTimeout(() => { advanceToNext(); }, 100);
