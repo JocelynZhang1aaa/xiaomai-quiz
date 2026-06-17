@@ -63,7 +63,6 @@ xiaomai-quiz/
 
 ### 扩展题库
 
-每加 5 题多撑 1 天，建议按以下格式添加：
 
 ```javascript
 { cat:"分类名称", q:"问题文本", opts:[
