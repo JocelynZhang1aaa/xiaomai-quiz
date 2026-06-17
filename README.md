@@ -6,19 +6,6 @@
 
 ---
 
-## 项目介绍
-
-这是一款为 AI 陪伴 Bot 设计的破冰问答 H5 游戏，通过5道随机选择题帮助用户快速了解 Bot 的性格和兴趣，同时收集用户信息用于个性化对话。
-
-### 核心特性
-
-- ✅ **单文件架构**：纯前端实现，无后端依赖，可直接部署
-- ✅ **37题题库**：6大分类，支持7天不重复答题
-- ✅ **多Bot复用**：通过简单配置即可适配不同角色
-- ✅ **完整上报**：8个事件全覆盖，遵循统一接口规范
-- ✅ **移动端优化**：触摸手势、BGM播放、无障碍支持
-
----
 
 ## 文件结构
 
@@ -163,62 +150,7 @@ POST https://testuniuni.html5.qq.com/api/external-report/reportExternal
 - ✅ Firefox
 - ⚠️ IE 不支持（使用了 ES6+ 语法）
 
----
 
-## 更新日志
 
-### v2026-06-17
-- ✅ 修复代码审查问题
-  - 删除死代码（`scoreNum` 相关）
-  - 删除未使用 CSS（`.score-num` 类）
-  - 修复无障碍问题（`user-scalable=no` → `user-scalable=yes`）
-- ✅ 优化结果页展示
-- ✅ 更新题库至 37 题
 
-### v2026-06-12
-- ✅ 完成双版本适配（v1/v2）
-- ✅ 完善上报逻辑（8个事件全覆盖）
-- ✅ 优化用户体验（弹窗拦截、BGM控制）
 
-### v2026-06-11
-- ✅ 初始版本发布
-- ✅ 完成基础功能（答题、结果页、上报）
-
----
-
-## 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-### 如何贡献
-
-1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的修改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
-
-### 题库贡献
-
-添加新题目时，请确保：
-- 题目符合 bot 人设
-- 选项回复自然、有趣
-- 分类正确（关于你/聊天偏好/兴趣爱好/生活方式/性格情感/脑洞趣味）
-
----
-
-## 许可证
-
-MIT License
-
----
-
-## 联系方式
-
-- **项目地址**：https://github.com/JocelynZhang1aaa/xiaomai-quiz
-- **在线体验**：https://jocelynzhang1aaa.github.io/xiaomai-quiz/
-- **问题反馈**：请在 GitHub Issues 提出
-
----
-
-**Made with ❤️ by 小麦团队**
