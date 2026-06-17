@@ -38,29 +38,7 @@ xiaomai-quiz/
 
 ---
 
-## 快速开始
-
-### 本地运行
-
-由于浏览器安全限制，需要通过 HTTP 服务器访问（不能直接双击打开）：
-
-```bash
-# Python 3
-python -m http.server 8000
-
-# 然后访问 http://localhost:8000
-```
-
-### 部署到 GitHub Pages
-
-1. Fork 或克隆本仓库
-2. 在仓库设置中启用 GitHub Pages
-3. 选择 `main` 分支作为源
-4. 访问 `https://你的用户名.github.io/xiaomai-quiz/`
-
----
-
-## 定制化（换 bot）
+## 换 bot
 
 打开 `index.html`，修改以下几处即可适配其他 bot：
 
