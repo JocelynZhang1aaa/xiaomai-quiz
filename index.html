@@ -951,8 +951,17 @@ function goChat() {
       summary_text: summary,
     })
   });
-  
+
+  // 基础URL
   var url = 'https://qun.qq.com/qunpro/robot/qunshare?robot_appid=3889687544&robot_uin=102775739';
+
+  // 拼接当前页面的URL参数
+  const currentParams = new URLSearchParams(window.location.search);
+  if (currentParams.toString()) {
+    url += '&' + currentParams.toString();
+  }
+
+  // 尝试跳转
   try {
     var win = window.open(url, '_blank');
     if (!win || win.closed || typeof win.closed === 'undefined') {
