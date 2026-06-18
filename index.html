@@ -234,7 +234,7 @@
   }
   .btn-restart:active{transform:translateY(2px);box-shadow:0 1px 0 #d97a8e;}
 
-  .result-footer{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:14px;line-height:1.8;letter-spacing:0.5px;}
+  .reward-hint{font-size:14px;color:var(--purple);text-align:center;margin:8px 0 14px;line-height:1.8;letter-spacing:0.5px;font-weight:600;}
 
   /* 弹窗 */
   .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);
@@ -282,6 +282,9 @@
       <!-- 标题 -->
       <div class="result-title">哇 你完成了～<br>今日惊喜小视频 🎬</div>
 
+      <!-- 掉落提示 -->
+      <div class="reward-hint">和小麦认识 7 天内，每次玩都有机会掉落惊喜小视频～<br>别忘了来哦 😊</div>
+
       <!-- 小视频 -->
       <div class="video-wrap">
         <video id="rewardVideo" controls preload="auto" playsinline webkit-playsinline></video>
@@ -303,7 +306,6 @@
         <button class="btn-chat" id="btnChat" onclick="goChat()">和小麦聊天 💬</button>
         <button class="btn-restart" id="btnRestart" onclick="showRetryModal()">再来一次 ▶</button>
       </div>
-      <div class="result-footer">和小麦认识 7 天内，每次玩都有机会掉落惊喜小视频～别忘了来哦 😊</div>
     </div>
   </div>
 
