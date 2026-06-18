@@ -892,17 +892,33 @@ function advanceToNext() {
   currCard.classList.add('slide-out-left');
   currCard.style.zIndex = 5;
 
+  // 强制清除上一题卡片所有按钮的状态，防止移动端残留
+  currCard.querySelectorAll('.opt-btn').forEach(function(btn) {
+    btn.classList.remove('selected', 'disabled');
+    btn.style.pointerEvents = '';
+    btn.blur();
+  });
+
   const nextCard = document.getElementById('card_' + nextIdx);
   nextCard.classList.remove('behind','slide-out-left','slide-out-right');
   nextCard.classList.add('active');
   nextCard.style.zIndex = 10;
 
-  // 清除新卡片所有按钮的 focus 状态，防止移动端残留上一题选中位置
-  nextCard.querySelectorAll('.opt-btn').forEach(function(btn) { btn.blur(); });
-  // 延迟再次 blur，覆盖移动端异步分配焦点的时机
-  setTimeout(function() {
-    nextCard.querySelectorAll('.opt-btn').forEach(function(btn) { btn.blur(); });
-  }, 120);
+  // 彻底清除新卡片所有按钮的可能残留状态（用 cloneNode 强制刷新 DOM）
+  nextCard.querySelectorAll('.opt-btn').forEach(function(btn) {
+    btn.classList.remove('selected', 'disabled');
+    btn.style.pointerEvents = '';
+    btn.blur();
+    // 强制触发 reflow，清除移动端可能的 :active / :focus 残留渲染
+    void btn.offsetHeight;
+    // 用 clone + replace 彻底清除浏览器内部状态
+    var clone = btn.cloneNode(true);
+    clone.classList.remove('selected', 'disabled');
+    clone.style.pointerEvents = '';
+    clone.blur();
+    clone.tabIndex = -1;
+    btn.parentNode.replaceChild(clone, btn);
+  });
 
   const pct = ((nextIdx) / QUESTIONS.length) * 100;
   document.getElementById('progressBar').style.width = pct + '%';
@@ -911,8 +927,6 @@ function advanceToNext() {
   currentQ = nextIdx;
   isAnimating = false;
   document.getElementById('hintText').textContent = '👆 选一个答案，看看小麦怎么说';
-  setRandomSubtitle();
-
 }
 
 // ===== 结果页 =====
