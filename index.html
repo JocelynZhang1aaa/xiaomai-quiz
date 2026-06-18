@@ -125,6 +125,7 @@
   }
   .opt-btn:hover{border-color:var(--purple);background:var(--purple-soft);}
   .opt-btn:active{transform:scale(0.98);}
+  .opt-btn:focus{outline:none;border-color:var(--purple-light);background:#fff;box-shadow:none;}
   .opt-btn.selected{
     border-color:var(--purple);background:var(--purple-soft);
     box-shadow:inset 0 0 0 2px var(--purple-light);
@@ -892,6 +893,9 @@ function advanceToNext() {
   nextCard.classList.remove('behind','slide-out-left','slide-out-right');
   nextCard.classList.add('active');
   nextCard.style.zIndex = 10;
+
+  // 清除新卡片所有按钮的 focus 状态，防止移动端残留上一题选中位置
+  nextCard.querySelectorAll('.opt-btn').forEach(function(btn) { btn.blur(); });
 
   const pct = ((nextIdx) / QUESTIONS.length) * 100;
   document.getElementById('progressBar').style.width = pct + '%';
