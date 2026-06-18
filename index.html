@@ -121,14 +121,17 @@
     background:#fff;border:1.5px solid var(--purple-light);border-radius:24px;
     padding:12px 14px;font-size:15px;color:var(--purple);font-weight:600;
     text-align:center;cursor:pointer;transition:all .2s;letter-spacing:1px;
-    font-family:inherit;outline:none;-webkit-tap-highlight-color:transparent;
+    font-family:inherit;outline:none;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-touch-callout:none;
+    user-select:none;
   }
   .opt-btn:hover{border-color:var(--purple);background:var(--purple-soft);}
-  .opt-btn:active{transform:scale(0.98);}
+  .opt-btn:active{transform:scale(0.98);background:var(--purple-soft);border-color:var(--purple);}
   .opt-btn:focus,.opt-btn:focus-visible{outline:none !important;border-color:var(--purple-light);background:#fff;box-shadow:none;}
   .opt-btn.selected{
-    border-color:var(--purple);background:var(--purple-soft);
-    box-shadow:inset 0 0 0 2px var(--purple-light);
+    border-color:var(--purple) !important;background:var(--purple-soft) !important;
+    box-shadow:inset 0 0 0 2px var(--purple-light) !important;
   }
   .opt-btn.disabled{opacity:0.35;pointer-events:none;}
 
@@ -906,20 +909,27 @@ function advanceToNext() {
   nextCard.classList.add('active');
   nextCard.style.zIndex = 10;
 
-  // 彻底清除新卡片所有按钮的可能残留状态（用 cloneNode 强制刷新 DOM）
+  // 彻底清除新卡片所有按钮的可能残留状态（用 innerHTML 强制重新解析）
+  nextCard.querySelectorAll('.opt-btn').forEach(function(btn) {
+    var parent = btn.parentNode;
+    var html = btn.outerHTML;
+    // 强制移除 selected/disabled 类，重置所有状态
+    html = html.replace(/\b(selected|disabled)\b/g, '');
+    html = html.replace(/style="[^"]*"/g, 'style=""');
+    // 用 outerHTML 替换，强制浏览器重新解析元素
+    btn.outerHTML = html;
+  });
+
+  // 重新绑定事件（因为 outerHTML 替换后 onclick 属性还在，不需要重新绑定）
+  // 再次确认所有按钮状态干净
   nextCard.querySelectorAll('.opt-btn').forEach(function(btn) {
     btn.classList.remove('selected', 'disabled');
     btn.style.pointerEvents = '';
+    btn.style.borderColor = '';
+    btn.style.backgroundColor = '';
+    btn.style.boxShadow = '';
     btn.blur();
-    // 强制触发 reflow，清除移动端可能的 :active / :focus 残留渲染
     void btn.offsetHeight;
-    // 用 clone + replace 彻底清除浏览器内部状态
-    var clone = btn.cloneNode(true);
-    clone.classList.remove('selected', 'disabled');
-    clone.style.pointerEvents = '';
-    clone.blur();
-    clone.tabIndex = -1;
-    btn.parentNode.replaceChild(clone, btn);
   });
 
   const pct = ((nextIdx) / QUESTIONS.length) * 100;
