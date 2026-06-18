@@ -181,15 +181,18 @@
     margin-bottom:16px;font-family:inherit;
   }
 
-  /* 人物图片卡 */
-  .chara-img-wrap{
-    position:relative;width:200px;margin:0 auto 18px;
+  /* 小视频 */
+  .video-wrap{
+    width:260px;margin:0 auto 18px;
     border-radius:14px;overflow:hidden;
     box-shadow:3px 6px 16px rgba(60,40,20,0.15);
     border:3px solid #fff;
     transform:rotate(-1.5deg);
+    background:#000;
   }
-  .chara-img-wrap img{width:100%;height:auto;display:block;}
+  .video-wrap video{
+    width:100%;height:auto;display:block;
+  }
 
   /* 分数 */
   .score-wrap{margin-bottom:10px;}
@@ -277,11 +280,11 @@
       <div class="clip pink" style="top:-4px;right:30px;transform:rotate(20deg);"></div>
 
       <!-- 标题 -->
-      <div class="result-title">欢迎入坑小麦！！</div>
+      <div class="result-title">哇 你完成了～<br>今日惊喜小视频 🎬</div>
 
-      <!-- 人物图片 -->
-      <div class="chara-img-wrap">
-        <img src="images/xiaomai.gif" id="charaImg" alt="小麦">
+      <!-- 小视频 -->
+      <div class="video-wrap">
+        <video id="rewardVideo" controls preload="auto" playsinline webkit-playsinline></video>
       </div>
 
       <!-- 分数 -->
@@ -939,6 +942,39 @@ function showResult() {
   // 随机取一条标签
   const label = XIAOMAI_LABELS[Math.floor(Math.random() * XIAOMAI_LABELS.length)];
   document.getElementById('scoreLabel').textContent = '「' + label + '」';
+
+  // 按"认识第几天"播放对应小视频（1-7天循环）
+  (function playDayVideo() {
+    var STORAGE_KEY = 'xiaomai_first_date';
+    var firstStr = localStorage.getItem(STORAGE_KEY);
+    var firstDate;
+    if (!firstStr) {
+      firstDate = new Date();
+      firstDate.setHours(0, 0, 0, 0);
+      localStorage.setItem(STORAGE_KEY, String(firstDate.getTime()));
+    } else {
+      firstDate = new Date(parseInt(firstStr, 10));
+    }
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var dayNum = Math.floor((today - firstDate) / 86400000) + 1;
+    if (dayNum < 1) dayNum = 1;
+    if (dayNum > 7) dayNum = 7;
+
+    var video = document.getElementById('rewardVideo');
+    if (!video) return;
+    video.src = 'assets/videos/day' + dayNum + '.mp4';
+    video.load();
+    // 尝试静音自动播放（浏览器通常允许静音自动播放）
+    video.muted = true;
+    video.play().then(function() {
+      // 自动播放成功：2秒后取消静音，让用户听到声音
+      setTimeout(function() { video.muted = false; }, 2000);
+    }).catch(function() {
+      // 自动播放被拦截：显示封面，等待用户点击播放按钮
+      video.muted = false;
+    });
+  })();
 }
 
 
