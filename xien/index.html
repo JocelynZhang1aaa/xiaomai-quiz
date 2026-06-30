@@ -1,0 +1,1092 @@
+<!-- 席恩破冰游戏 H5 |「执事的心情厨房」| 版本：2026-06-30 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,user-scalable=yes">
+<title>执事的心情厨房</title>
+<style>
+  :root{
+    --bg:#DCE9F4;
+    --card:#F4F9FD;
+    --ink:#2C2A33;
+    --ink-soft:#6B6675;
+    --navy:#21304E;
+    --navy-deep:#16223C;
+    --navy-light:#D6DEEC;
+    --navy-soft:#EDF1F8;
+    --gold:#FFD43B;
+    --gold-soft:#FFF3C4;
+    --gold-deep:#F5B800;
+    --wine:#B5860A;
+    --line:#CBD9E4;
+    --blue:#3D72B8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Maru Gothic ProN","PingFang SC","Songti SC",serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;overflow-x:hidden;
+    touch-action:pan-y;
+  }
+  body{
+    background:
+      linear-gradient(var(--bg),var(--bg)),
+      repeating-linear-gradient(0deg,transparent 0 23px,#C8DCEC 23px 24px),
+      repeating-linear-gradient(90deg,transparent 0 23px,#C8DCEC 23px 24px);
+    background-blend-mode:multiply;
+  }
+  .app{max-width:520px;margin:0 auto;padding:20px 14px 60px;min-height:100vh;position:relative;}
+
+  /* ===== BGM按钮 ===== */
+  #bgmToggle{
+    position:absolute;right:14px;top:14px;
+    background:var(--gold);border:1px solid var(--gold-deep);color:var(--navy-deep);
+    font-size:12px;padding:4px 10px;border-radius:20px;cursor:pointer;font-weight:700;
+    font-family:inherit;box-shadow:1px 2px 0 var(--gold-deep);transition:all .15s;z-index:100;
+  }
+  #bgmToggle:hover{transform:rotate(-2deg);}
+  #bgmToggle.on{background:var(--gold-deep);border-color:var(--wine);box-shadow:1px 2px 0 var(--wine);}
+
+  /* ===== 顶部标题 ===== */
+  .header{text-align:center;padding:16px 0 8px;position:relative;}
+  .header h1{font-size:23px;letter-spacing:3px;color:var(--navy-deep);font-weight:800;}
+  .header h1 .highlight{color:var(--navy-deep);position:relative;}
+  .header h1 .highlight::after{
+    content:"";position:absolute;bottom:2px;left:-3px;right:-3px;height:10px;
+    background:var(--gold);border-radius:4px;z-index:-1;opacity:0.9;
+  }
+  .header .sub{margin-top:8px;font-size:12px;color:var(--ink-soft);letter-spacing:1px;}
+
+  /* ===== 回形针 ===== */
+  .clip{
+    position:absolute;width:14px;height:28px;border:2.5px solid;border-radius:0 0 10px 10px;
+    transform:rotate(-15deg);z-index:5;pointer-events:none;
+  }
+  .clip::before{
+    content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+    width:2.5px;height:10px;background:inherit;border-radius:2px;
+  }
+  .clip.navy{border-color:var(--navy);}
+  .clip.gold{border-color:var(--gold-deep);}
+  .clip.wine{border-color:var(--gold);}
+
+  /* ===== 进度条 ===== */
+  .progress-wrap{display:flex;align-items:center;gap:8px;margin:12px 8px 14px;font-size:12px;color:var(--ink-soft);}
+  .progress-bar{flex:1;height:6px;background:var(--gold-soft);border-radius:3px;overflow:hidden;}
+  .progress-bar > i{display:block;height:100%;background:var(--gold-deep);width:0%;transition:width .5s cubic-bezier(.4,.0,.2,1);border-radius:3px;}
+
+  /* ===== 卡片堆叠容器 ===== */
+  .card-stack{position:relative;height:420px;overflow:hidden;}
+
+  /* ===== 卡片（可滑动）===== */
+  .slide-card{
+    position:absolute;top:0;left:0;right:0;
+    background:var(--card);border:1.5px dashed var(--line);border-radius:18px;
+    padding:26px 18px 22px;height:100%;
+    box-shadow:3px 5px 0 rgba(33,48,78,0.10);
+    display:flex;flex-direction:column;
+    transition:transform .38s cubic-bezier(.4,.0,.2,1),opacity .38s cubic-bezier(.4,.0,.2,1);
+    will-change:transform,opacity;
+    cursor:grab;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .slide-card:active{cursor:grabbing;}
+  .slide-card.behind{
+    transform:scale(0.95) translateY(8px);
+    opacity:0.4;pointer-events:none;z-index:1;
+  }
+  .slide-card.active{
+    transform:translateX(0) scale(1);opacity:1;z-index:10;
+  }
+  .slide-card.slide-out-left{
+    transform:translateX(-120%) scale(0.9);opacity:0;z-index:10;
+  }
+  .slide-card.slide-out-right{
+    transform:translateX(120%) scale(0.9);opacity:0;z-index:10;
+  }
+
+  /* ===== 卡片内容 ===== */
+  .card-tag{text-align:center;font-size:11px;color:var(--ink-soft);letter-spacing:2px;margin-bottom:14px;}
+  .card-tag .dot{color:var(--gold-deep);font-weight:700;}
+  .card-tag .cat-badge{display:inline-block;background:var(--gold-soft);color:var(--wine);padding:1px 8px;border-radius:10px;font-size:10px;margin-left:6px;font-weight:700;}
+
+  .question-area{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+  .question-text{font-size:17px;font-weight:700;line-height:1.65;color:var(--ink);margin-bottom:22px;padding:0 6px;}
+
+  .options{width:100%;display:flex;flex-direction:column;gap:11px;padding:0 2px;}
+  .opt-btn{
+    background:#fff;border:1.5px solid var(--navy-light);border-radius:24px;
+    padding:12px 14px;font-size:15px;color:var(--navy);font-weight:600;
+    text-align:center;cursor:pointer;transition:all .2s;letter-spacing:1px;
+    font-family:inherit;outline:none;-webkit-tap-highlight-color:transparent;
+  }
+  .opt-btn:hover{border-color:var(--gold-deep);background:var(--gold-soft);}
+  .opt-btn:active{transform:scale(0.98);}
+  .opt-btn:focus,.opt-btn:focus-visible{outline:none !important;border-color:var(--navy-light);background:#fff;box-shadow:none;}
+  .opt-btn.selected{
+    border-color:var(--gold-deep);background:var(--gold-soft);
+    box-shadow:inset 0 0 0 2px var(--gold);
+  }
+  .opt-btn.disabled{opacity:0.35;pointer-events:none;}
+
+  /* ===== 席恩回应区 ===== */
+  .reply-area{
+    margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);
+    display:none;animation:replyIn .45s cubic-bezier(.4,.0,.2,1);
+  }
+  .reply-area.show{display:block;}
+  @keyframes replyIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  .xien-row{display:flex;align-items:flex-start;gap:10px;}
+  .xien-avatar{
+    width:72px;height:72px;border-radius:50%;border:2.5px solid var(--gold);
+    background:var(--gold-soft);flex-shrink:0;display:flex;align-items:flex-start;justify-content:center;
+    font-size:30px;overflow:hidden;box-shadow:2px 3px 0 rgba(245,184,0,0.3);
+  }
+  .xien-avatar img{width:100%;height:100%;object-fit:cover;object-position:50% 42%;display:block;}
+  .xien-bubble{
+    flex:1;background:var(--gold-soft);border:1.5px dashed var(--gold);
+    border-radius:14px;border-top-left-radius:4px;padding:11px 13px;
+    font-size:13.5px;line-height:1.75;color:var(--ink);position:relative;
+  }
+  .xien-bubble::before{
+    content:"";position:absolute;left:-7px;top:10px;width:0;height:0;
+    border-top:5px solid transparent;border-bottom:5px solid transparent;
+    border-right:7px solid var(--gold);
+  }
+
+  /* ===== 提示文字 ===== */
+  .hint-text{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:14px;letter-spacing:1px;}
+
+  /* ===== 结果页 ===== */
+  .result-screen{text-align:center;padding:16px 6px 40px;animation:fadeIn .5s ease;}
+
+  /* 主卡片 */
+  .result-card{
+    background:var(--card);border:1.5px dashed var(--line);border-radius:18px;
+    padding:28px 18px 24px;position:relative;box-shadow:3px 5px 0 rgba(33,48,78,0.10);
+    margin-bottom:0;text-align:center;
+  }
+  .result-card::before{
+    content:"";position:absolute;top:-10px;left:24px;width:38px;height:14px;
+    background:var(--gold);border-radius:3px;transform:rotate(-3deg);opacity:0.9;
+  }
+
+  /* 标题 */
+  .result-title{
+    font-size:20px;font-weight:800;color:var(--navy-deep);letter-spacing:2px;
+    margin-bottom:16px;font-family:inherit;
+  }
+
+  /* 今日菜单 banner */
+  .menu-banner{
+    display:inline-block;background:var(--gold);color:var(--navy-deep);
+    font-size:13px;font-weight:700;padding:5px 22px;border-radius:20px;
+    letter-spacing:2px;margin-bottom:14px;
+    box-shadow:1px 2px 0 var(--gold-deep);
+  }
+
+  /* 料理图片 */
+  .dish-img-wrap{
+    position:relative;width:200px;margin:0 auto 12px;
+    border-radius:14px;overflow:hidden;
+  }
+  .dish-img-wrap img{width:100%;height:auto;display:block;}
+
+  /* 料理名 */
+  .dish-name{
+    display:inline-block;
+    font-size:18px;font-weight:800;color:var(--navy-deep);
+    letter-spacing:1px;margin-bottom:14px;line-height:1.4;
+    background:linear-gradient(transparent 62%,var(--gold) 62%);
+    padding:0 4px;
+  }
+
+  /* 料理说明 */
+  .dish-desc-section{
+    background:var(--gold-soft);border:1.5px solid var(--gold);
+    border-radius:14px;padding:14px 16px;text-align:left;margin-bottom:16px;
+    box-shadow:2px 3px 0 rgba(245,184,0,0.18);
+  }
+  .dish-desc-title{
+    font-size:13px;font-weight:700;color:var(--wine);
+    margin-bottom:8px;letter-spacing:1px;
+  }
+  .dish-desc-title::after{content:"——";margin-left:2px;color:var(--wine);}
+  .dish-desc-text{font-size:13px;line-height:1.9;color:var(--ink);}
+
+  /* 关于席恩 */
+  .about-section{
+    background:var(--navy-soft);border:1.5px dashed var(--navy-light);
+    border-radius:14px;padding:14px 16px;text-align:left;margin-bottom:20px;
+  }
+  .about-title{
+    font-size:13px;font-weight:700;color:var(--navy-deep);
+    margin-bottom:8px;letter-spacing:1px;
+  }
+  .about-title::after{content:"——";margin-left:2px;color:var(--navy-deep);}
+  .about-text{font-size:13px;line-height:1.85;color:var(--ink);}
+
+  /* 底部两按钮 */
+  .btn-row{display:flex;gap:12px;margin-top:4px;}
+  .btn-chat{
+    flex:1;background:var(--navy);color:#fff;border:none;font:inherit;font-weight:700;
+    font-size:14px;letter-spacing:1px;padding:13px 10px;border-radius:24px;
+    cursor:pointer;box-shadow:0 3px 0 var(--navy-deep);transition:all .15s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-chat:active{transform:translateY(2px);box-shadow:0 1px 0 var(--navy-deep);}
+  .btn-restart{
+    flex:1;background:var(--gold);color:var(--navy-deep);border:none;font:inherit;font-weight:700;
+    font-size:14px;letter-spacing:1px;padding:13px 10px;border-radius:24px;
+    cursor:pointer;box-shadow:0 3px 0 var(--gold-deep);transition:all .15s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-restart:active{transform:translateY(2px);box-shadow:0 1px 0 var(--gold-deep);}
+
+  .reward-hint{font-size:13px;color:var(--wine);text-align:center;margin:6px 0 12px;line-height:2;letter-spacing:0.5px;font-weight:600;}
+
+  /* 弹窗 */
+  .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);
+    display:flex;align-items:center;justify-content:center;z-index:999;animation:fadeIn .2s ease;}
+  .modal-card{background:#fff;border-radius:20px;padding:28px 24px;max-width:280px;width:85%;
+    text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.15);}
+  .modal-text{font-size:14px;line-height:1.9;color:var(--ink);margin-bottom:18px;}
+  .modal-btn{background:var(--navy);color:#fff;border:none;font:inherit;font-weight:700;
+    font-size:14px;padding:10px 28px;border-radius:20px;cursor:pointer;
+    box-shadow:0 2px 0 var(--navy-deep);-webkit-tap-highlight-color:transparent;}
+  .modal-btn:active{transform:translateY(1px);}
+
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .hide{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- BGM按钮 -->
+  <button id="bgmToggle" title="背景音乐" aria-label="切换 BGM">🔇 BGM</button>
+
+  <!-- ===== 答题区（直接显示） ===== -->
+  <div id="quizScreen">
+    <div class="header">
+      <h1>执事的<span class="highlight">心情</span>厨房</h1>
+      <div class="sub" id="subtitle"></div>
+    </div>
+
+    <div class="progress-wrap">
+      <span id="progressLabel">1/5</span>
+      <div class="progress-bar"><i id="progressBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="card-stack" id="cardStack"></div>
+
+    <div class="hint-text" id="hintText">👆 选一个答案，听听席恩怎么说</div>
+  </div>
+
+    <!-- ===== 结果页 ===== -->
+  <div id="resultScreen" class="result-screen hide">
+    <div class="result-card">
+      <div class="clip navy" style="top:-6px;left:26px;transform:rotate(-18deg);"></div>
+      <div class="clip gold" style="top:-4px;right:30px;transform:rotate(20deg);"></div>
+
+      <!-- 标题 -->
+      <div class="result-title">承蒙关照，今日的菜单<br>已为您备好 🍽️</div>
+
+      <!-- 掉落提示 -->
+      <div class="reward-hint">每次光临都有机会尝到惊喜小料理～<br>请别忘了常来哦！😊</div>
+
+      <!-- 今日菜单标签 -->
+      <div class="menu-banner">今日菜单 · 为您定制</div>
+
+      <!-- 料理图片 -->
+      <div class="dish-img-wrap">
+        <img src="" id="dishImg" alt="今日料理">
+      </div>
+
+      <!-- 料理名 -->
+      <div class="dish-name" id="dishName">—</div>
+
+      <!-- 料理说明（席恩） -->
+      <div class="dish-desc-section">
+        <div class="dish-desc-title">席恩的话</div>
+        <div class="dish-desc-text" id="dishDesc">—</div>
+      </div>
+
+      <!-- 按钮行 -->
+      <div class="btn-row">
+        <button class="btn-chat" id="btnChat" onclick="goChat()">与席恩对话</button>
+        <button class="btn-restart" id="btnRestart" onclick="showRetryModal()">再来一次 ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 再来一次弹窗 -->
+  <div id="retryModal" class="modal-overlay hide" onclick="closeRetryModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-text">
+        今日的厨房，要先打烊啦。<br>
+        每日菜单都会更新，藏着新的小惊喜～<br>
+        席恩会在这里，温柔地等您再来。
+      </div>
+      <button class="modal-btn" onclick="closeRetryModal()">好的，明日见。</button>
+    </div>
+  </div>
+
+</div>
+
+<audio id="bgm" loop preload="none" src="bgm.mp3"></audio>
+
+<script>
+
+// ===== 席恩随机头像 =====
+// 每张图脸部位置不同，pos 指定圆形头像框聚焦的脸部坐标(object-position)，
+// scale 为放大倍数（让脸完整露出），origin 为放大基准点
+// 答题区头像池：限定为用户指定的4张（写字/风筝/扑过来/厨师帽）
+// pos+scale+origin 让圆形头像框聚焦到完整的脸
+const XIEN_AVATARS = [
+  { src:'images/xien2.png', pos:'62% 46%', scale:2.0, origin:'62% 46%' },
+  { src:'images/xien1.png', pos:'52% 56%', scale:1.9, origin:'52% 56%' },
+  { src:'images/xien4.png', pos:'40% 44%', scale:2.0, origin:'40% 44%' },
+  { src:'images/xien7.png', pos:'48% 47%', scale:2.3, origin:'48% 47%' },
+];
+function getRandomAvatar() {
+  return XIEN_AVATARS[Math.floor(Math.random() * XIEN_AVATARS.length)];
+}
+function setAvatar(imgId) {
+  const img = document.getElementById(imgId);
+  if (!img) return;
+  const a = getRandomAvatar();
+  img.style.objectPosition = a.pos;
+  img.style.transform = 'scale(' + a.scale + ')';
+  img.style.transformOrigin = a.origin;
+  img.onerror = function() { this.style.display='none'; this.parentElement.innerHTML='🕯️'; };
+  img.onload  = function() { this.style.display='block'; };
+  img.src = a.src;
+}
+
+// ===== 副标题（固定文案）=====
+function setRandomSubtitle() {
+  const el = document.getElementById('subtitle');
+  if (!el) return;
+  el.textContent = '每次光临都有机会尝到惊喜小料理～请别忘了常来哦';
+}
+
+/* ============================================================
+   「执事的心情厨房」回合制问答
+   每次随机抽取5道题
+   ============================================================ */
+
+// ===== 完整题库 =====
+const QUESTION_BANK = [
+  // --- 关于您 ---
+  { cat:"关于您", q:"今天，过得还顺心吗？", opts:[
+    {text:"挺顺利的", reply:"那真是太好了。顺心的日子，请好好珍藏起来呀。"},
+    {text:"一团糟", reply:"辛苦您了。糟心的事就交给时间慢慢化开，现在，先让我照顾您。"},
+    {text:"平平淡淡", reply:"平平淡淡，其实也是一种温柔的幸福呢。"}
+  ]},
+  { cat:"关于您", q:"您此刻的状态是？", opts:[
+    {text:"忙到脚不沾地", reply:"辛苦您了。来，先坐下歇一歇，喝口水好吗？"},
+    {text:"闲得发慌", reply:"难得的悠闲时光，就放心享受吧，我陪着您。"},
+    {text:"摆烂躺平中", reply:"偶尔躺一躺也没关系的。不过待会儿，记得好好吃顿饭哦。"}
+  ]},
+  { cat:"关于您", q:"您今天吃饭了吗？", opts:[
+    {text:"按时吃了", reply:"真乖。能好好照顾自己，我也就放心了。"},
+    {text:"随便对付的", reply:"怎么能随便对付呢……下一顿，让我好好为您准备吧。"},
+    {text:"还没吃", reply:"那可不行，快去吃点东西。饿着自己，我会心疼的。"}
+  ]},
+  { cat:"关于您", q:"您最近睡得好吗？", opts:[
+    {text:"睡得很香", reply:"能睡个好觉真是太好了。愿您每一夜都这样安稳。"},
+    {text:"总是熬夜", reply:"夜深了，身体会累的。今晚，就早点歇息好不好？"},
+    {text:"失眠睡不着", reply:"睡不着的话……要我为您讲个轻轻柔柔的睡前故事吗？"}
+  ]},
+
+  // --- 相处偏好 ---
+  { cat:"相处偏好", q:"您希望我以怎样的态度待您？", opts:[
+    {text:"温柔体贴", reply:"好。那我就把所有的温柔，都留给您一个人。"},
+    {text:"像朋友一样", reply:"嗯，那便不必拘谨。能成为您的朋友，我很欢喜。"},
+    {text:"安静守护", reply:"好。我会在您看不见的地方，悄悄守着您。"}
+  ]},
+  { cat:"相处偏好", q:"我们多久联系一次合适？", opts:[
+    {text:"每天都想见你", reply:"承蒙厚爱。那我便日日恭候，绝不让您等。"},
+    {text:"想起来再说", reply:"嗯，随您的心意就好。我一直都在，随时等您。"},
+    {text:"有事才找", reply:"好。不过……就算没事，也欢迎您来找我说说话。"}
+  ]},
+  { cat:"相处偏好", q:"聊天时您更喜欢？", opts:[
+    {text:"听我絮叨", reply:"那您尽管说，我会认认真真听完每一个字。"},
+    {text:"一起聊聊", reply:"好呀。能和您你一言我一语，是很温暖的事。"},
+    {text:"安静陪着", reply:"嗯，不说话也很好。我就静静陪在您身边。"}
+  ]},
+  { cat:"相处偏好", q:"您介意我对您唠叨吗？", opts:[
+    {text:"不介意，多关心我", reply:"那我可要多多关心您了。被人惦记着，是件幸福的事呀。"},
+    {text:"适度就好", reply:"好，我会把握分寸的。只盼这份关心，能让您安心。"},
+    {text:"别管我", reply:"嘴上说着别管，其实最需要被照顾的，往往就是这样的人呢。"}
+  ]},
+
+  // --- 味觉口味 ---
+  { cat:"味觉口味", q:"您最钟意哪一类味道？", opts:[
+    {text:"甜食控", reply:"喜欢甜的呀。那愿您的日子，也像甜点一样让人开心。"},
+    {text:"无辣不欢", reply:"喜欢热辣的味道呢，真有活力。我会记下您的口味的。"},
+    {text:"清淡养生", reply:"懂得善待身体，真好。这份食谱，我替您好好留着。"}
+  ]},
+  { cat:"味觉口味", q:"深夜饿了，您会怎么办？", opts:[
+    {text:"果断煮碗面", reply:"深夜的一碗面，最是治愈了。我陪着您，别烫到手哦。"},
+    {text:"忍着不吃", reply:"实在饿了就别硬撑啦，对身体不好。唤我一声就是。"},
+    {text:"叫外卖", reply:"嗯，方便就好。不过下次，让我为您备些更暖心的吧。"}
+  ]},
+  { cat:"味觉口味", q:"如果我为您做一道菜，您想要？", opts:[
+    {text:"一碗热汤", reply:"一碗热汤，最是熨帖人心。我这就把食谱细细教给您。"},
+    {text:"精致甜点", reply:"甜点呀。再难的方子，只要是为您，我都愿意学会。"},
+    {text:"随便，你拿手的", reply:"把选择交给我，谢谢您的信任。我一定用心为您准备。"}
+  ]},
+  { cat:"味觉口味", q:"您下厨的水平如何？", opts:[
+    {text:"大厨级别", reply:"哇，那可真厉害。改日，还要向您讨教几手呢。"},
+    {text:"勉强能吃", reply:"能愿意下厨，就已经很棒了。慢慢来，我陪您一起进步。"},
+    {text:"厨房杀手", reply:"没关系的，谁都有起步的时候。往后，就让我来教您吧。"}
+  ]},
+
+  // --- 性情心绪 ---
+  { cat:"性情心绪", q:"您觉得自己是怎样的人？", opts:[
+    {text:"外冷内热", reply:"嘴硬心软呀……巧了，我们倒是同一类人呢。"},
+    {text:"随性洒脱", reply:"能不被外物所扰，活得自在——这份通透，真叫人羡慕。"},
+    {text:"敏感多虑", reply:"想得多的人，往往也最温柔。这从来不是缺点，请别苛责自己。"}
+  ]},
+  { cat:"性情心绪", q:"心情不好时，您会？", opts:[
+    {text:"自己扛着", reply:"一个人扛着，会很累的。这种时候，把肩膀借给您靠靠，也是我的本分。"},
+    {text:"找人倾诉", reply:"愿意说出来，就已经很好了。说给我听吧，我会一直听着。"},
+    {text:"大吃一顿", reply:"用美食抚慰自己，再正当不过了。这一顿，就别计较什么了。"}
+  ]},
+  { cat:"性情心绪", q:"您最害怕什么？", opts:[
+    {text:"孤独一人", reply:"我懂那种感觉。所以请记着，这里永远为您留着一盏灯。"},
+    {text:"被人遗忘", reply:"别担心。至少此刻您与我之间的这份温暖，是真真切切的。"},
+    {text:"失去重要的人", reply:"……至少现在，我会好好地、稳稳地待在您身边。"}
+  ]},
+  { cat:"性情心绪", q:"被夸奖时，您的反应是？", opts:[
+    {text:"欣然接受", reply:"能坦然接受夸奖，是种难得的自信，真好。"},
+    {text:"假装淡定", reply:"嘴上谦虚，耳根却悄悄红了——这样的您，真可爱。"},
+    {text:"慌张否认", reply:"这般手足无措的模样，看着叫人忍不住想多疼您几分。"}
+  ]},
+
+  // --- 奇思妙想 ---
+  { cat:"奇思妙想", q:"若能拥有一种能力，您想要？", opts:[
+    {text:"读心术", reply:"读心呀。那我心里那些藏着的温柔，您可要轻轻接住哦。"},
+    {text:"时间静止", reply:"若时间能停下，我便能把每一道菜，都为您做到尽善尽美。"},
+    {text:"瞬间移动", reply:"无论您去到多远，都请记得——这间厨房，永远为您亮着灯。"}
+  ]},
+  { cat:"奇思妙想", q:"周末您更想去哪里？", opts:[
+    {text:"海边", reply:"海呀……我对海，有种说不清的偏爱。若您去了，可愿替我多看它几眼？"},
+    {text:"热闹都市", reply:"霓虹与人潮，也很美好。愿您在热闹里，也能觅得一份自在。"},
+    {text:"宅在家里", reply:"宅着真好。那我便陪您窝在这方寸之间，给您讲讲故事，可好？"}
+  ]},
+  { cat:"奇思妙想", q:"如果变成一种动物，您想当？", opts:[
+    {text:"猫", reply:"猫呀，又乖又惹人疼，倒是很适合您呢。"},
+    {text:"海豚", reply:"海豚据说能感知到我的存在，对我很友好。您选它，让我莫名欢喜。"},
+    {text:"什么都不当", reply:"做回自己，是最难也最珍贵的选择。这样的您，很好。"}
+  ]},
+  { cat:"奇思妙想", q:"若世界只剩最后一天，您会？", opts:[
+    {text:"陪在重要的人身边", reply:"……那个「重要的人」之中，可否，也有我小小的一席之地？"},
+    {text:"吃遍所有想吃的", reply:"及时行乐，是温柔的活法。那这一天，便由我为您倾心掌勺。"},
+    {text:"睡到地老天荒", reply:"终末之日也要睡个饱足——这份从容，让我也安心了。"}
+  ]},
+
+  // --- 第二批扩展（保证7天不重复）---
+  { cat:"关于您", q:"忙碌一天后，您最想要什么？", opts:[
+    {text:"一顿热饭", reply:"一顿热饭，足以慰藉一日的疲惫。您能这样想，我很欣慰。"},
+    {text:"睡个好觉", reply:"好好歇息吧。今夜的烦恼，就先放下，交给睡眠。"},
+    {text:"有人说说话", reply:"那我便在这儿。无论多晚，只要您唤我，我都应着。"}
+  ]},
+  { cat:"相处偏好", q:"您喜欢我哪一种模式？", opts:[
+    {text:"温柔侍从", reply:"温柔的这一面么。好，那我便把它，全心全意地交付给您。"},
+    {text:"暖心管家", reply:"嗯，那我会把您的衣食冷暖，都细细放在心上。"},
+    {text:"贴心朋友", reply:"能做您的朋友，是我的荣幸。往后，请多指教啦。"}
+  ]},
+  { cat:"味觉口味", q:"早餐对您而言是？", opts:[
+    {text:"一天的仪式感", reply:"懂得善待清晨的人，整日都会被温柔以待的。"},
+    {text:"经常省略", reply:"早餐很重要的呀。明早，就让我来提醒您，好不好？"},
+    {text:"随手抓点", reply:"将就一时无妨，可别总是这样。您的胃，也需要被好好疼惜。"}
+  ]},
+  { cat:"性情心绪", q:"面对喜欢的人，您会？", opts:[
+    {text:"主动出击", reply:"够坦率，真好。这份勇气，叫人由衷地佩服与羡慕。"},
+    {text:"默默关注", reply:"默默地放在心上呀……这种心情，我比谁都明白。"},
+    {text:"假装不在意", reply:"明明在意，却偏装作无所谓——请您，别太为难自己呀。"}
+  ]},
+  { cat:"奇思妙想", q:"若有一道菜能代表您，会是？", opts:[
+    {text:"甜而不腻的蛋糕", reply:"甜而不腻，分寸恰好——这般温柔的味道，与您正相称。"},
+    {text:"温热的关东煮", reply:"暖暖的、慢炖出的滋味，最是治愈。和您一样，让人安心。"},
+    {text:"温润的一碗白粥", reply:"看似平淡，细品方知其暖。懂得欣赏它的人，心一定很柔软。"}
+  ]}
+];
+
+// ===== 每次抽取的题目数 =====
+const DRAW_COUNT = 5;
+
+// ===== 状态 =====
+let QUESTIONS = [];
+let currentQ = 0;
+let userChoices = [];
+let isAnimating = false;
+let touchStartX = 0;
+let touchStartY = 0;
+
+// ===== 上报模块 =====
+const REPORT_CONFIG = {
+  api_url: 'https://testuniuni.html5.qq.com/api/external-report/reportExternal',
+  sceneName: 'xien_icebreaking',
+  bot_id: 'xien',
+  bot_name: '席恩',
+  game_name: '执事的心情厨房',
+};
+
+const REPORT_STATE = {
+  contentId: generateContentId(),
+  pageEnterTime: Date.now(),
+  urlParams: getUrlParams(),
+};
+
+function generateContentId() {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
+}
+
+function getUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const result = {};
+  for (const [key, value] of params.entries()) {
+    result[key] = value;
+  }
+  return result;
+}
+
+function reportEvent(eventName, options = {}) {
+  const body = {
+    urlParams: REPORT_STATE.urlParams,
+    sceneName: REPORT_CONFIG.sceneName,
+    eventName: eventName,
+    contentId: REPORT_STATE.contentId,
+  };
+  if (options.withStayDuration) {
+    body.eventTime = Date.now() - REPORT_STATE.pageEnterTime;
+  }
+  if (options.content) {
+    body.content = options.content;
+  }
+  fetch(REPORT_CONFIG.api_url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => {});
+}
+
+function reportEventBeacon(eventName, options = {}) {
+  const body = {
+    urlParams: REPORT_STATE.urlParams,
+    sceneName: REPORT_CONFIG.sceneName,
+    eventName: eventName,
+    contentId: REPORT_STATE.contentId,
+  };
+  if (options.withStayDuration) {
+    body.eventTime = Date.now() - REPORT_STATE.pageEnterTime;
+  }
+  if (options.content) {
+    body.content = options.content;
+  }
+  try {
+    navigator.sendBeacon(
+      REPORT_CONFIG.api_url,
+      new Blob([JSON.stringify(body)], { type: 'application/json' })
+    );
+  } catch (e) {}
+}
+
+function buildSummaryText(choices, status) {
+  const cfg = REPORT_CONFIG;
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const nowStr = `${now.getFullYear()}年${pad(now.getMonth()+1)}月${pad(now.getDate())}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const total = QUESTIONS.length;
+
+  let lines = [];
+  lines.push(`用户与${cfg.bot_name}于 ${nowStr} 进行了「${cfg.game_name}」破冰游戏。`);
+  lines.push('');
+
+  if (status === 'complete') {
+    lines.push(`用户完成全部 ${total} 题。`);
+  } else {
+    const doneCount = choices.length;
+    const remaining = total - doneCount;
+    if (status === 'exit_chat') {
+      lines.push(`用户完成 ${doneCount} 题后点击「与${cfg.bot_name}对话」进入聊天，剩余 ${remaining} 题未作答。`);
+    } else if (status === 'exit_swipe') {
+      const lastQ = QUESTIONS[currentQ];
+      lines.push(`用户完成 ${doneCount} 题，在第 ${currentQ + 1} 题「${lastQ ? lastQ.q : ''}」左滑跳出，剩余 ${remaining} 题未作答。`);
+    } else {
+      lines.push(`用户完成 ${doneCount} 题，游戏中途结束。`);
+    }
+  }
+
+  lines.push('');
+  lines.push('答题记录：');
+
+  QUESTIONS.forEach((q, idx) => {
+    const choice = choices.find(c => c.qIndex === idx);
+    if (!choice) {
+      lines.push(`${idx+1}. [${q.cat}] ${q.q} → （未作答）`);
+    } else if (choice.optIndex === -1) {
+      lines.push(`${idx+1}. [${q.cat}] ${q.q} → （跳过）`);
+    } else {
+      const opt = q.opts[choice.optIndex];
+      lines.push(`${idx+1}. [${q.cat}] ${q.q} → ${opt.text}`);
+      if (opt.reply) {
+        lines.push(`   ${cfg.bot_name}回应：「${opt.reply}」`);
+      }
+    }
+  });
+
+  return lines.join('\n');
+}
+
+window.addEventListener('load', () => {
+  reportEvent('pv');
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    reportEvent('exp', { withStayDuration: true });
+  }
+});
+
+window.addEventListener('pagehide', () => {
+  reportEventBeacon('exp', { withStayDuration: true });
+});
+
+// ===== 随机抽取题目 =====
+function drawQuestions() {
+  const pool = QUESTION_BANK.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, DRAW_COUNT);
+}
+
+// ===== 初始化 / 开始答题 =====
+function startQuiz() {
+  REPORT_STATE.contentId = generateContentId();
+  REPORT_STATE.pageEnterTime = Date.now();
+  setRandomSubtitle();
+  QUESTIONS = drawQuestions();
+  currentQ = 0;
+  userChoices = [];
+  document.getElementById('resultScreen').classList.add('hide');
+  document.getElementById('quizScreen').classList.remove('hide');
+  buildCards();
+  showQuestion(0);
+  reportEvent('start_clk');
+}
+
+// ===== 构建卡片DOM =====
+function buildCards() {
+  const stack = document.getElementById('cardStack');
+  stack.innerHTML = '';
+  QUESTIONS.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'slide-card behind';
+    card.id = 'card_' + idx;
+    card.innerHTML = buildCardHTML(q, idx);
+    stack.appendChild(card);
+  });
+}
+
+// ===== 单张卡片HTML =====
+function buildCardHTML(q, idx) {
+  const optsHTML = q.opts.map((opt, i) =>
+    `<button class="opt-btn" id="opt_${idx}_${i}" tabindex="-1" ontouchstart="event.stopPropagation()" onclick="selectOption(${idx},${i})">${opt.text}</button>`
+  ).join('');
+
+  return `
+    <div class="clip navy" style="top:-6px;left:28px;transform:rotate(-20deg);pointer-events:none;"></div>
+    <div class="clip gold" style="top:-4px;left:50px;transform:rotate(14deg);height:24px;pointer-events:none;"></div>
+    <div class="clip wine" style="top:-8px;right:38px;transform:rotate(24deg);pointer-events:none;"></div>
+    <div class="card-tag"><span class="dot">●</span> 第 ${idx+1}/${QUESTIONS.length} 道 <span class="cat-badge">${q.cat}</span></div>
+    <div class="question-area">
+      <div class="question-text">${q.q}</div>
+      <div class="options">${optsHTML}</div>
+    </div>
+    <div class="reply-area" id="reply_${idx}">
+      <div class="xien-row">
+        <div class="xien-avatar"><img src="" id="xienAvatarImg_${idx}" alt="席恩"></div>
+        <div class="xien-bubble" id="bubble_${idx}"></div>
+      </div>
+    </div>
+  `;
+}
+
+// ===== 显示第N题 =====
+function showQuestion(idx) {
+  currentQ = idx;
+  const pct = ((idx) / QUESTIONS.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = (idx + 1) + '/' + QUESTIONS.length;
+
+  QUESTIONS.forEach((_, i) => {
+    const c = document.getElementById('card_' + i);
+    if (!c) return;
+    c.classList.remove('active','behind','slide-out-left','slide-out-right');
+    if (i === idx) {
+      c.classList.add('active');
+      c.style.zIndex = 10;
+    } else if (i < idx) {
+      c.classList.add('slide-out-left');
+      c.style.zIndex = 1;
+    } else {
+      c.classList.add('behind');
+      c.style.zIndex = 1;
+    }
+  });
+
+  document.getElementById('hintText').textContent = '👆 选一个答案，听听席恩怎么说';
+  isAnimating = false;
+}
+
+// ===== 用户选择 =====
+function selectOption(qIdx, optIdx) {
+  if (isAnimating) return;
+  if (qIdx !== currentQ) return;
+
+  const q = QUESTIONS[qIdx];
+  const chosenOpt = q.opts[optIdx];
+  userChoices.push({
+    qIndex: qIdx,
+    optIndex: optIdx,
+    qText: q.q,
+    optText: chosenOpt.text,
+    cat: q.cat,
+    botReply: chosenOpt.reply || '',
+  });
+
+  reportEvent('next_clk', {
+    content: JSON.stringify({
+      question_index: qIdx,
+      question_text: q.q,
+      question_category: q.cat,
+      chosen_index: optIdx,
+      chosen_text: chosenOpt.text,
+      bot_reply: chosenOpt.reply || '',
+    })
+  });
+
+  q.opts.forEach((_, i) => {
+    const btn = document.getElementById('opt_' + qIdx + '_' + i);
+    if (!btn) return;
+    if (i === optIdx) {
+      btn.classList.add('selected');
+    } else {
+      btn.classList.add('disabled');
+    }
+    btn.style.pointerEvents = 'none';
+  });
+
+  const reply = q.opts[optIdx].reply;
+  const bubble = document.getElementById('bubble_' + qIdx);
+  const replyArea = document.getElementById('reply_' + qIdx);
+  bubble.textContent = reply;
+  setAvatar('xienAvatarImg_' + qIdx);
+  replyArea.classList.add('show');
+
+  isAnimating = true;
+  setTimeout(() => { advanceToNext(); }, 1800);
+}
+
+// ===== 切换到下一题 =====
+function advanceToNext() {
+  if (currentQ >= QUESTIONS.length - 1) {
+    showResult();
+    return;
+  }
+  const nextIdx = currentQ + 1;
+
+  const currCard = document.getElementById('card_' + currentQ);
+  currCard.classList.remove('active');
+  currCard.classList.add('slide-out-left');
+  currCard.style.zIndex = 5;
+
+  currCard.querySelectorAll('.opt-btn').forEach(function(btn) {
+    btn.classList.remove('selected', 'disabled');
+    btn.style.pointerEvents = '';
+    btn.blur();
+  });
+
+  const nextCard = document.getElementById('card_' + nextIdx);
+  nextCard.classList.remove('behind','slide-out-left','slide-out-right');
+  nextCard.classList.add('active');
+  nextCard.style.zIndex = 10;
+
+  nextCard.querySelectorAll('.opt-btn').forEach(function(btn) {
+    btn.classList.remove('selected', 'disabled');
+    btn.style.pointerEvents = '';
+    btn.blur();
+    void btn.offsetHeight;
+    var clone = btn.cloneNode(true);
+    clone.classList.remove('selected', 'disabled');
+    clone.style.pointerEvents = '';
+    clone.blur();
+    clone.tabIndex = -1;
+    btn.parentNode.replaceChild(clone, btn);
+  });
+
+  const pct = ((nextIdx) / QUESTIONS.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = (nextIdx + 1) + '/' + QUESTIONS.length;
+
+  currentQ = nextIdx;
+  isAnimating = false;
+  document.getElementById('hintText').textContent = '👆 选一个答案，听听席恩怎么说';
+}
+
+// ===== 结果页 · 今日菜单（按天固定顺序出）=====
+// 第1天出第1道，第2天出第2道……第7天后循环
+const XIEN_MENU = [
+  {
+    img: 'dishes/dish_cake.png',
+    name: '莓事的又活一天小蛋糕',
+    desc: '让我想想从哪里说起比较好……对了，首先要感谢 B 站的 up 主们拯救了我的厨艺生涯。「今日菜单」这项服务的初衷很简单，就是想通过每天的餐点，悄悄了解您的口味和生活节奏。今天观察到您似乎需要一点轻松愉快的调剂呢，所以为您准备了草莓蛋糕——可爱的名字配上不算糟糕（？）的手艺，至少能博您一笑，不是吗。若能得到您的喜爱，也许就是我人生中第一个成功的烘焙作品了。',
+  },
+  {
+    img: 'dishes/dish_bento.png',
+    name: '心情愉悦爱爱爱爱心小便当',
+    desc: '今天的便当，我偷偷多放了一颗爱心形状的煎蛋哦。倒不是有什么特别的含义……只是觉得，您打开盒盖的那一刻若能笑出来，这一整天大概都会顺遂一些吧。番茄、饭团、还有您爱吃的那几样，我都一一摆得整整齐齐。请趁热享用——食物会凉，但我备餐时的这份心意，希望能一直暖着您。',
+  },
+  {
+    img: 'dishes/dish_noodle.png',
+    name: '无敌泡泡泡泡面',
+    desc: '深夜了还没睡么？……罢了，我猜到您会饿。所以这碗泡面，我守在锅边看着它咕嘟咕嘟冒泡，确保没有把厨房烧掉（笑）。我知道，这算不上什么健康餐——但偶尔放纵一次，也是被允许的。汤要趁热喝，喝完了，就乖乖去睡，好吗？',
+  },
+  {
+    img: 'dishes/dish_cookie.png',
+    name: '大事化小曲奇饼干',
+    desc: '今天的您，看起来心事重重呢。所以我烤了一盘小小的曲奇——再大的烦恼，配上一块甜甜的饼干，似乎也能化小一点点。请允许我啰嗦一句：天塌不下来的，真的。您只管把饼干慢慢吃完，剩下的难题，我陪您一起想办法。',
+  },
+  {
+    img: 'dishes/dish_mungbean.png',
+    name: '我这一生如绿豆冰',
+    desc: '「Anyone can cook」——我戴着这顶帽子，给您盛了一碗冰冰凉凉的绿豆沙。清清淡淡的，像极了一段平静的日子。我这一生……唔，这话题对您而言太沉重了，便不提了。只愿这碗甜品能为您消去几分暑气与烦躁，让您尝到一点，名为安宁的味道。',
+  },
+  {
+    img: 'dishes/dish_mapo.png',
+    name: '心乱如麻婆豆腐',
+    desc: '心里乱糟糟的时候，就来一份够味的麻婆豆腐吧。又麻又辣，足够把那些理不清的思绪，统统逼出一身薄汗。吃辣的时候没法多想，这倒是件好事——至少那短短的几分钟，您可以什么都不去烦恼。我在一旁替您备好了温水，慢些吃，别呛着了。',
+  },
+];
+
+function showResult() {
+  document.getElementById('quizScreen').classList.add('hide');
+  document.getElementById('resultScreen').classList.remove('hide');
+
+  const summary = buildSummaryText(userChoices, 'complete');
+  reportEvent('submit_clk', {
+    content: JSON.stringify({
+      status: 'complete',
+      total_questions: QUESTIONS.length,
+      summary_text: summary,
+    })
+  });
+
+  // 按"认识第几天"固定顺序出料理（第一天出第一个，循环）
+  var STORAGE_KEY = 'xien_first_date';
+  var firstStr = localStorage.getItem(STORAGE_KEY);
+  var firstDate;
+  if (!firstStr) {
+    firstDate = new Date();
+    firstDate.setHours(0, 0, 0, 0);
+    localStorage.setItem(STORAGE_KEY, String(firstDate.getTime()));
+  } else {
+    firstDate = new Date(parseInt(firstStr, 10));
+  }
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var dayNum = Math.floor((today - firstDate) / 86400000); // 0-based
+  if (dayNum < 0) dayNum = 0;
+  var dish = XIEN_MENU[dayNum % XIEN_MENU.length];
+
+  var dishImg = document.getElementById('dishImg');
+  dishImg.onerror = function() { this.style.display = 'none'; };
+  dishImg.src = dish.img;
+  document.getElementById('dishName').textContent = '「' + dish.name + '」';
+  document.getElementById('dishDesc').textContent = dish.desc;
+}
+
+// ===== 去和席恩对话（配置跳转地址）=====
+function goChat() {
+  const summary = buildSummaryText(userChoices, 'exit_chat');
+  reportEvent('share_clk', {
+    content: JSON.stringify({
+      status: 'exit_chat',
+      trigger: 'chat_button',
+      answered_count: userChoices.length,
+      summary_text: summary,
+    })
+  });
+
+  // 基础URL（席恩 bot 跳转地址，请按实际替换）
+  var url = 'https://qun.qq.com/qunpro/robot/qunshare?robot_appid=3889687544&robot_uin=102775739';
+
+  const currentParams = new URLSearchParams(window.location.search);
+  if (currentParams.toString()) {
+    url += '&' + currentParams.toString();
+  }
+
+  try {
+    var win = window.open(url, '_blank');
+    if (!win || win.closed || typeof win.closed === 'undefined') {
+      try { window.top.location.href = url; }
+      catch (e) { window.location.href = url; }
+    }
+  } catch (e) {
+    window.location.href = url;
+  }
+}
+
+// ===== 再来一次 → 弹窗 =====
+function showRetryModal() {
+  reportEvent('retry_clk');
+  document.getElementById('retryModal').classList.remove('hide');
+}
+function closeRetryModal() {
+  document.getElementById('retryModal').classList.add('hide');
+}
+
+/* ===== 触摸滑动手势 ===== */
+const stack = document.getElementById('cardStack');
+
+stack.addEventListener('touchstart', function(e) {
+  if (isAnimating) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+stack.addEventListener('touchend', function(e) {
+  if (isAnimating) return;
+  if (!touchStartX) return;
+
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0 && currentQ < QUESTIONS.length - 1) {
+      skipToNext();
+    } else if (dx > 0 && currentQ > 0) {
+      goToPrev();
+    }
+  }
+  touchStartX = 0;
+  touchStartY = 0;
+}, { passive: true });
+
+// ===== 跳过此题（左滑）=====
+function skipToNext() {
+  if (isAnimating) return;
+  if (currentQ >= QUESTIONS.length - 1) {
+    showResult();
+    return;
+  }
+  const skippedQ = QUESTIONS[currentQ];
+  userChoices.push({
+    qIndex: currentQ,
+    optIndex: -1,
+    qText: skippedQ.q,
+    optText: '（跳过）',
+    cat: skippedQ.cat,
+    botReply: '',
+  });
+  const summary = buildSummaryText(userChoices, 'exit_swipe');
+  reportEvent('back_clk', {
+    content: JSON.stringify({
+      status: 'exit_swipe',
+      trigger: 'swipe_left',
+      skipped_question: { index: currentQ, category: skippedQ.cat, text: skippedQ.q },
+      summary_text: summary,
+    })
+  });
+  isAnimating = true;
+  setTimeout(() => { advanceToNext(); }, 100);
+}
+
+// ===== 回到上一题（右滑）=====
+function goToPrev() {
+  if (isAnimating) return;
+  if (currentQ <= 0) return;
+
+  if (userChoices.length > 0 && userChoices[userChoices.length - 1].qIndex === currentQ) {
+    userChoices.pop();
+  }
+  if (userChoices.length > 0 && userChoices[userChoices.length - 1].qIndex === currentQ - 1) {
+    userChoices.pop();
+  }
+
+  const prevIdx = currentQ - 1;
+
+  const currCard = document.getElementById('card_' + currentQ);
+  currCard.classList.remove('active');
+  currCard.classList.add('slide-out-right');
+  currCard.style.zIndex = 5;
+
+  const prevCard = document.getElementById('card_' + prevIdx);
+  prevCard.classList.remove('slide-out-left','slide-out-right','behind');
+  prevCard.classList.add('active');
+  prevCard.style.zIndex = 10;
+
+  const prevQ = QUESTIONS[prevIdx];
+  prevQ.opts.forEach((_, i) => {
+    const btn = document.getElementById('opt_' + prevIdx + '_' + i);
+    if (!btn) return;
+    btn.classList.remove('selected','disabled');
+    btn.style.pointerEvents = '';
+  });
+  const prevReply = document.getElementById('reply_' + prevIdx);
+  if (prevReply) prevReply.classList.remove('show');
+
+  const pct = ((prevIdx) / QUESTIONS.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = (prevIdx + 1) + '/' + QUESTIONS.length;
+
+  currentQ = prevIdx;
+  isAnimating = false;
+  document.getElementById('hintText').textContent = '👆 选一个答案，听听席恩怎么说';
+}
+
+/* ===== BGM ===== */
+const bgm = document.getElementById('bgm');
+const bgmBtn = document.getElementById('bgmToggle');
+let bgmPlaying = false;
+
+bgmBtn.onclick = () => {
+  if (bgmPlaying) {
+    bgm.pause();
+    bgmPlaying = false;
+    bgmBtn.textContent = '🔇 BGM';
+    bgmBtn.classList.remove('on');
+  } else {
+    bgm.play().then(() => {
+      bgmPlaying = true;
+      bgmBtn.textContent = '🔊 BGM';
+      bgmBtn.classList.add('on');
+    }).catch(() => {
+      bgm.load();
+      bgm.play().then(() => {
+        bgmPlaying = true;
+        bgmBtn.textContent = '🔊 BGM';
+        bgmBtn.classList.add('on');
+      });
+    });
+  }
+};
+
+/* ===== 初始化：直接进入答题 ===== */
+startQuiz();
+</script>
+
+</body>
+</html>
