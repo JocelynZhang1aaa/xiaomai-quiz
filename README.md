@@ -2,7 +2,9 @@
 
 「想了解你多一点」回合制破冰问答 H5，支持多 bot 复用。
 
-**在线体验：** https://jocelynzhang1aaa.github.io/xiaomai-quiz/
+**在线体验：**
+- 小麦版：https://jocelynzhang1aaa.github.io/xiaomai-quiz/
+- 席恩版「执事的心情厨房」：https://jocelynzhang1aaa.github.io/xiaomai-quiz/xien/
 
 ---
 
