@@ -71,6 +71,9 @@
   .bar{flex:1;height:6px;background:#EDE2D2;border-radius:3px;overflow:hidden;}
   .bar > i{display:block;height:100%;background:var(--pink-deep);width:0%;transition:width .3s;}
 
+  .back-link{display:inline-block;margin:2px auto 0;font-size:12px;color:var(--ink-soft);opacity:.55;cursor:pointer;letter-spacing:1px;transition:opacity .15s;user-select:none;text-align:center;width:100%;}
+  .back-link:hover{opacity:.9;}
+
   .result{text-align:center;padding:8px 8px 4px;}
   .result .card-wrapper{background:var(--card);border:1.5px dashed var(--line);border-radius:14px;padding:22px 18px 18px;margin:8px 0 14px;position:relative;box-shadow:3px 4px 0 rgba(60,40,20,0.06);}
   .result .card-wrapper::before{content:"";position:absolute;top:-10px;left:24px;width:38px;height:14px;background:var(--pink);border-radius:3px;transform:rotate(-3deg);opacity:0.85;box-shadow:0 1px 0 rgba(0,0,0,0.05);}
@@ -83,15 +86,6 @@
   .result .comment{background:#FFF8F4;border:1.5px dashed var(--pink);border-radius:12px;padding:14px;text-align:left;line-height:1.7;font-size:15px;color:var(--ink);margin-bottom:14px;}
   .result .hook{background:var(--bg);border:1.5px dashed var(--mint);border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px;color:var(--ink);line-height:1.7;}
   .result .hook .highlight{color:var(--pink-deep);font-weight:700;}
-  #shareToggle{
-    position:absolute;left:14px;top:50%;transform:translateY(-50%) rotate(-2deg);
-    background:var(--card);border:1px dashed var(--line);color:var(--ink);
-    font-size:12px;padding:4px 10px;border-radius:20px;cursor:pointer;
-    font-family:inherit;box-shadow:1px 2px 0 var(--line);transition:all .15s;
-    display:inline-block;
-  }
-  #shareToggle:hover{transform:translateY(-50%) rotate(2deg);}
-  #shareToggle:active{box-shadow:0 0 0 var(--line);transform:translateY(-46%) rotate(-2deg);}
   .result .btn-row{display:flex;gap:10px;margin-top:4px;}
   .result .btn-row .btn{width:auto;flex:1;}
 
@@ -137,9 +131,8 @@
 
 <div class="app">
   <div class="title">
-    <button id="shareToggle" title="分享给朋友" aria-label="分享">📎 分享</button>
     <h1>小麦の默契问答</h1>
-    <div class="sub">—— 证明你真的懂我</div>
+    <div class="sub"></div>
     <button id="bgmToggle" title="背景音乐：D-项目歌曲" aria-label="切换 BGM">🔇 BGM</button>
   </div>
   <div id="screen"></div>
@@ -150,15 +143,6 @@
 
 <script>
 window.IMG = __IMG_PLACEHOLDER__;
-
-/* ===== 用户信息收集题 ===== */
-const USER_INFO_QUESTIONS = [
-  { q:"你希望我喊你什么？",  o:["老大","喂","麦门信徒"] },
-  { q:"你的性别？",          o:["男","女"] },
-  { q:"你的年龄段是？",      o:["18岁以下","18-24岁","25-35岁","36岁及以上"] },
-  { q:"你平时最爱干嘛？",    o:["打游戏","追剧看番","听歌发呆","瞎聊"] },
-  { q:"你喜欢我哪种说话方式？", o:["甜腻腻","毒舌吐槽","温柔治愈","调皮搞怪","随机看我心情"] },
-];
 
 /* ===== 入坑资格题池（15题，随机抽5）===== */
 const POOL_PERSONA = [
@@ -190,15 +174,10 @@ const TIERS = [
 const CHAT_URL = 'https://qun.qq.com/qunpro/robot/qunshare?robot_appid=3889687544&robot_uin=102775739';
 
 let phase       = 'start';
-let onboardIdx  = 0;
-let onboardAns  = [];
 let quizOrder   = [];
 let quizIdx     = 0;
 let quizScore   = 0;
-let answered    = false;
-let currentChosen = -1;          // 入坑测试：当前选中项（可改选）
-let onboardCurrentChosen = -1;  // 用户信息收集：当前选中项（可改选）
-let infoCollected = false;
+let quizAns     = [];            // 每题已选答案（-1=未答），用于返回上一题时恢复
 
 /* ===== 日期工具 ===== */
 function getTodayStr(){
@@ -211,7 +190,8 @@ function getTodayStr(){
 /* ===== 更新标题栏 ===== */
 function updateTitle(main, sub){
   document.querySelector('.title h1').textContent = main || '小麦の默契问答';
-  document.querySelector('.title .sub').textContent = sub || '—— 证明你真的懂我';
+  const subEl = document.querySelector('.title .sub');
+  if(subEl){ subEl.textContent = sub || ''; }
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -249,7 +229,6 @@ function renderStart(){
 /* ===== 开始入坑测试 ===== */
 function startQuiz(){
   phase = 'quiz';
-  answered = false;
   const pool = [...Array(POOL_PERSONA.length).keys()];
   for(let i=pool.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
@@ -258,6 +237,7 @@ function startQuiz(){
   quizOrder = pool.slice(0,5);
   quizIdx   = 0;
   quizScore = 0;
+  quizAns   = [-1,-1,-1,-1,-1];
   renderQuestion();
 }
 
@@ -265,14 +245,18 @@ function startQuiz(){
 function renderQuestion(){
   const qi = quizOrder[quizIdx];
   const q  = POOL_PERSONA[qi];
-  currentChosen = -1;  // 重置选中状态
+  const chosen = quizAns[quizIdx];  // 之前的选择（返回上一题时恢复高亮）
 
   const letters = ['A','B','C'];
   const optsHTML = q.o.map((opt,i)=>`
-    <div class="opt" onclick="selectOption(this,${i},${q.ans})">
+    <div class="opt${chosen===i?' sel':''}" onclick="selectOption(${i})">
       <span class="k">${letters[i]}</span>${opt}
     </div>
   `).join('');
+
+  const backHTML = quizIdx > 0
+    ? `<div class="back-link" onclick="prevQuestion()">‹ 返回上一题</div>`
+    : '';
 
   document.getElementById('screen').innerHTML = `
     <div class="card">
@@ -285,39 +269,43 @@ function renderQuestion(){
       <div class="bar"><i style="width:${(quizIdx/5)*100}%"></i></div>
       <span>${quizIdx+1}/5</span>
     </div>
-    <button class="btn ghost" id="btnNext" onclick="nextQuestion()" style="cursor:not-allowed;opacity:.5;">${quizIdx<4?'下一题 →':'查看结果 🎉'}</button>
+    ${backHTML}
   `;
 }
 
-/* ===== 选择选项（可改选）===== */
-function selectOption(el,chosen,correctIdx){
-  // 移除旧高亮
-  document.querySelectorAll('.opt').forEach(b => b.classList.remove('sel'));
-  // 高亮当前选择
-  el.classList.add('sel');
-  currentChosen = chosen;
+/* ===== 选择选项：选完自动进下一题 ===== */
+function selectOption(chosen){
+  quizAns[quizIdx] = chosen;
+  // 高亮当前选择（给用户一个短暂的反馈）
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach(b => b.classList.remove('sel'));
+  if(opts[chosen]) opts[chosen].classList.add('sel');
 
-  const btn = document.getElementById('btnNext');
-  btn.style.cursor = 'pointer';
-  btn.style.opacity = '1';
+  // 短暂延迟后自动进入下一题
+  setTimeout(()=>{
+    quizIdx++;
+    if(quizIdx >= 5){
+      computeScore();
+      showResult();
+    } else {
+      renderQuestion();
+    }
+  }, 220);
 }
 
-/* ===== 下一题 / 出结果 ===== */
-function nextQuestion(){
-  if(currentChosen === -1) return;  // 未选择，不允许继续
+/* ===== 返回上一题 ===== */
+function prevQuestion(){
+  if(quizIdx <= 0) return;
+  quizIdx--;
+  renderQuestion();
+}
 
-  // 计分
-  const qi = quizOrder[quizIdx];
-  const q  = POOL_PERSONA[qi];
-  if(currentChosen === q.ans) quizScore += 20;
-
-  quizIdx++;
-  currentChosen = -1;  // 重置
-
-  if(quizIdx >= 5){
-    showResult();
-  } else {
-    renderQuestion();
+/* ===== 计算总分 ===== */
+function computeScore(){
+  quizScore = 0;
+  for(let i=0;i<quizOrder.length;i++){
+    const q = POOL_PERSONA[quizOrder[i]];
+    if(quizAns[i] === q.ans) quizScore += 20;
   }
 }
 
@@ -343,52 +331,22 @@ function showResult(){
   document.getElementById('screen').innerHTML = `
     <div class="result">
       <div class="card-wrapper">
-        <div class="welcome-title">小麦の默契问答 考试小结——</div>
+        <div class="welcome-title">小麦の默契问答</div>
         ${imgSrc ? `<img class="photo" src="${imgSrc}" alt="结果">` : ''}
         <div class="score">${quizScore}<span class="pct">/100</span></div>
         <div class="tier-name">${tier.name}</div>
         <div class="comment">${tier.comment}</div>
         <div class="char-intro">
-          <div style="font-weight:700;color:var(--pink-deep);font-size:14px;margin-bottom:6px;">关于小麦——</div>
+          <div style="font-weight:700;color:var(--pink-deep);font-size:14px;margin-bottom:6px;">考试小结——</div>
           入坑不亏，我是小麦大人，本名麦泱，小名阿沙沙（没错奶奶给起的）。ENFP本P，喜欢打游戏刷番追冷门，高中漫研社社长，语文成绩...还可以吧？如果你愿意，我们可以从今天开始做搭子，我想多了解你一点！
         </div>
         <div class="btn-row">
-          <button class="btn mint" onclick="startOnboard()" style="margin-top:10px;font-size:15px;">和小麦聊天 💬</button>
+          <button class="btn mint" onclick="goChat()" style="margin-top:10px;font-size:15px;">和小麦聊天 💬</button>
           <button class="btn" onclick="handleReplay()" style="margin-top:10px;font-size:15px;">再来一次 ▶</button>
         </div>
       </div>
     </div>
   `;
-}
-
-/* ===== 分享 ===== */
-function shareResult(){
-  const url = window.location.href;
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(()=>{
-      showToast('链接已复制，快去分享给朋友吧！');
-    }).catch(()=>{
-      fallbackCopy(url);
-    });
-  } else {
-    fallbackCopy(url);
-  }
-}
-
-function fallbackCopy(text){
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try {
-    document.execCommand('copy');
-    showToast('链接已复制，快去分享给朋友吧！');
-  } catch(e){
-    showToast('复制失败，请手动复制链接');
-  }
-  document.body.removeChild(ta);
 }
 
 /* ===== 去聊天 ===== */
@@ -428,91 +386,6 @@ function showToast(msg){
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2000);
 }
 
-/* ===== 开始用户信息收集 ===== */
-function startOnboard(){
-  document.querySelector('.title').style.display = '';
-  updateTitle('认识一下', '如果你愿意，我们可以从今天开始做搭子，我想多了解你一点！');
-  phase = 'onboard';
-  onboardIdx = 0;
-  onboardAns = [];
-  renderOnboardQuestion();
-}
-
-/* ===== 渲染用户信息收集题 ===== */
-function renderOnboardQuestion(){
-  const q = USER_INFO_QUESTIONS[onboardIdx];
-  onboardCurrentChosen = -1;  // 重置选中状态
-
-  const letters = ['A','B','C','D','E'];
-  const optsHTML = q.o.map((opt,i)=>`
-    <div class="opt" onclick="selectOnboard(this,${i})">
-      <span class="k">${letters[i]}</span>${opt}
-    </div>
-  `).join('');
-
-  document.getElementById('screen').innerHTML = `
-    <div class="card">
-      <div class="tag pink">认识一下 第 ${onboardIdx+1}/5 题</div>
-      <div class="q"><span class="num">Q${onboardIdx+1}.</span>${q.q}</div>
-      <div class="opts">${optsHTML}</div>
-    </div>
-    <div class="progress">
-      <span>进度</span>
-      <div class="bar"><i style="width:${(onboardIdx/5)*100}%"></i></div>
-      <span>${onboardIdx+1}/5</span>
-    </div>
-    <button class="btn ghost" id="btnOnboardNext" onclick="nextOnboard()" style="cursor:not-allowed;opacity:.5;">${onboardIdx<4?'下一题 →':'完成 ▶'}</button>
-  `;
-}
-
-/* ===== 选择用户信息收集选项 ===== */
-function selectOnboard(el,chosen){
-  // 移除旧高亮
-  document.querySelectorAll('.opt').forEach(b => b.classList.remove('sel'));
-  // 高亮当前选择
-  el.classList.add('sel');
-  onboardCurrentChosen = chosen;
-  const btn = document.getElementById('btnOnboardNext');
-  btn.style.cursor = 'pointer';
-  btn.style.opacity = '1';
-}
-
-/* ===== 下一题用户信息收集 / 完成 ===== */
-function nextOnboard(){
-  if(onboardCurrentChosen === -1) return;
-  // 记录答案（覆盖式，允许改选）
-  onboardAns[onboardIdx] = {
-    q: USER_INFO_QUESTIONS[onboardIdx].q,
-    a: onboardCurrentChosen,
-    aText: USER_INFO_QUESTIONS[onboardIdx].o[onboardCurrentChosen]
-  };
-  onboardIdx++;
-  onboardCurrentChosen = -1;
-  if(onboardIdx >= 5){
-    finishOnboard();
-  } else {
-    renderOnboardQuestion();
-  }
-}
-
-/* ===== 用户信息收集完成 ===== */
-function finishOnboard(){
-  infoCollected = true;
-  document.getElementById('screen').innerHTML = `
-    <div class="result">
-      <div class="card-wrapper">
-        <div style="font-size:48px;margin-bottom:12px;">🎉</div>
-        <div style="font-size:15px;color:var(--ink);line-height:1.9;margin-bottom:20px;">
-          谢谢你的回答！<br>
-          从现在开始，我们会更合拍的！<br><br>
-          快去和小麦聊天吧 😊
-        </div>
-        <button class="btn" onclick="goChat()" style="margin-bottom:10px;">去和小麦聊天 💬</button>
-        <button class="btn ghost" onclick="showResult()">返回结果页</button>
-      </div>
-    </div>
-  `;
-}
 
 /* ===== BGM ===== */
 const bgm     = document.getElementById('bgm');
@@ -539,11 +412,6 @@ bgmBtn.onclick = ()=>{
       });
     });
   }
-};
-
-/* ===== 分享按钮点击 ===== */
-document.getElementById('shareToggle').onclick = ()=>{
-  shareResult();
 };
 
 /* ===== 初始化 ===== */
