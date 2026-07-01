@@ -313,7 +313,6 @@ function computeScore(){
 function showResult(){
   document.querySelector('.title').style.display = 'none';
   phase = 'result';
-  localStorage.setItem('xiaomai_quiz_date', getTodayStr());
   let tier = TIERS[0];
   for(const t of TIERS){
     if(quizScore >= t.min && quizScore <= t.max) tier = t;
@@ -354,13 +353,8 @@ function goChat(){
   window.open(CHAT_URL, '_blank');
 }
 
-/* ===== 再来一次 路由 ===== */
+/* ===== 再来一次：无限重玩 ===== */
 function handleReplay(){
-  const lastDate = localStorage.getItem('xiaomai_quiz_date');
-  if(lastDate === getTodayStr()){
-    showReplayModal();
-    return;
-  }
   renderStart();
 }
 
