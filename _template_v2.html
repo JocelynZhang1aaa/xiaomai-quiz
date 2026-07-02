@@ -144,6 +144,97 @@
 <script>
 window.IMG = __IMG_PLACEHOLDER__;
 
+/* ===== 上报模块（对齐统一接口规范）===== */
+const REPORT_CONFIG = {
+  api_url: 'https://testuniuni.html5.qq.com/api/external-report/reportExternal',
+  sceneName: 'xiaomai_moqi',
+  bot_id: 'xiaomai',
+  bot_name: '小麦',
+  game_name: '小麦の默契问答',
+};
+
+const REPORT_STATE = {
+  contentId: generateContentId(),
+  pageEnterTime: Date.now(),
+  urlParams: getUrlParams(),
+  reported: false,   // exp 只报一次
+};
+
+function generateContentId(){
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
+}
+function getUrlParams(){
+  const params = new URLSearchParams(window.location.search);
+  const result = {};
+  for(const [k,v] of params.entries()) result[k] = v;
+  return result;
+}
+function reportEvent(eventName, options = {}){
+  const body = {
+    urlParams: REPORT_STATE.urlParams,
+    sceneName: REPORT_CONFIG.sceneName,
+    eventName: eventName,
+    contentId: REPORT_STATE.contentId,
+  };
+  if(options.withStayDuration) body.eventTime = Date.now() - REPORT_STATE.pageEnterTime;
+  if(options.content) body.content = options.content;
+  fetch(REPORT_CONFIG.api_url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(()=>{});
+}
+function reportEventBeacon(eventName, options = {}){
+  const body = {
+    urlParams: REPORT_STATE.urlParams,
+    sceneName: REPORT_CONFIG.sceneName,
+    eventName: eventName,
+    contentId: REPORT_STATE.contentId,
+  };
+  if(options.withStayDuration) body.eventTime = Date.now() - REPORT_STATE.pageEnterTime;
+  if(options.content) body.content = options.content;
+  try{
+    navigator.sendBeacon(REPORT_CONFIG.api_url, new Blob([JSON.stringify(body)], { type: 'application/json' }));
+  }catch(e){}
+}
+
+/* ===== 生成用户画像摘要 summary_text ===== */
+function buildSummaryText(status){
+  const cfg = REPORT_CONFIG;
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const nowStr = `${now.getFullYear()}年${pad(now.getMonth()+1)}月${pad(now.getDate())}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const answered = quizAns.filter(a => a !== -1).length;
+
+  let lines = [];
+  lines.push(`用户与${cfg.bot_name}于 ${nowStr} 进行了「${cfg.game_name}」测试。`);
+  lines.push('');
+
+  if(status === 'complete'){
+    // 计算等级
+    let tier = TIERS[0];
+    for(const t of TIERS){ if(quizScore >= t.min && quizScore <= t.max) tier = t; }
+    lines.push(`用户完成全部 5 题，得分 ${quizScore}/100，评定等级：${tier.name}。`);
+  } else {
+    lines.push(`用户已作答 ${answered} 题（共 5 题），中途退出。`);
+  }
+
+  lines.push('');
+  lines.push('答题记录：');
+  quizOrder.forEach((qi, idx) => {
+    const q = POOL_PERSONA[qi];
+    const chosen = quizAns[idx];
+    if(chosen === -1){
+      lines.push(`${idx+1}. ${q.q} → （未作答）`);
+    } else {
+      const correct = chosen === q.ans;
+      lines.push(`${idx+1}. ${q.q} → 选了「${q.o[chosen]}」（${correct ? '✓答对' : '✗答错，正确答案：'+q.o[q.ans]}）`);
+    }
+  });
+
+  return lines.join('\n');
+}
+
 /* ===== 入坑资格题池（15题，随机抽5）===== */
 const POOL_PERSONA = [
   { q:"我的本名是？",                         o:["麦小麦","麦泱","麦泱泱"], ans:1 },
@@ -229,6 +320,7 @@ function renderStart(){
 /* ===== 开始入坑测试 ===== */
 function startQuiz(){
   phase = 'quiz';
+  reportEvent('start_clk');
   const pool = [...Array(POOL_PERSONA.length).keys()];
   for(let i=pool.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
@@ -276,6 +368,9 @@ function renderQuestion(){
 /* ===== 选择选项：选完自动进下一题 ===== */
 function selectOption(chosen){
   quizAns[quizIdx] = chosen;
+  // 上报本题作答
+  const _qi = quizOrder[quizIdx], _q = POOL_PERSONA[_qi];
+  reportEvent('next_clk', { content: `第${quizIdx+1}题「${_q.q}」选择「${_q.o[chosen]}」（${chosen===_q.ans?'答对':'答错'}）` });
   // 高亮当前选择（给用户一个短暂的反馈）
   const opts = document.querySelectorAll('.opt');
   opts.forEach(b => b.classList.remove('sel'));
@@ -296,6 +391,7 @@ function selectOption(chosen){
 /* ===== 返回上一题 ===== */
 function prevQuestion(){
   if(quizIdx <= 0) return;
+  reportEvent('back_clk', { content: `从第${quizIdx+1}题返回上一题` });
   quizIdx--;
   renderQuestion();
 }
@@ -313,6 +409,7 @@ function computeScore(){
 function showResult(){
   document.querySelector('.title').style.display = 'none';
   phase = 'result';
+  reportEvent('submit_clk', { content: buildSummaryText('complete') });
   let tier = TIERS[0];
   for(const t of TIERS){
     if(quizScore >= t.min && quizScore <= t.max) tier = t;
@@ -350,11 +447,13 @@ function showResult(){
 
 /* ===== 去聊天 ===== */
 function goChat(){
+  reportEvent('share_clk', { content: buildSummaryText(quizAns.filter(a=>a!==-1).length >= 5 ? 'complete' : 'partial') });
   window.open(CHAT_URL, '_blank');
 }
 
 /* ===== 再来一次：无限重玩 ===== */
 function handleReplay(){
+  reportEvent('retry_clk');
   renderStart();
 }
 
@@ -407,6 +506,15 @@ bgmBtn.onclick = ()=>{
     });
   }
 };
+
+/* ===== 上报事件挂载 ===== */
+window.addEventListener('load', () => { reportEvent('pv'); });
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden' && !REPORT_STATE.reported){
+    REPORT_STATE.reported = true;
+    reportEventBeacon('exp', { withStayDuration: true });
+  }
+});
 
 /* ===== 初始化 ===== */
 renderStart();
