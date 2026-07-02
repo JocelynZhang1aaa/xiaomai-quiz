@@ -164,11 +164,11 @@ const POOL_PERSONA = [
 ];
 
 const TIERS = [
-  { min:0,   max:20,  name:"「完全陌生人？」", comment:"「你怎么连这个都不知道，Honey 我们重新认识一下吧」" },
-  { min:21,  max:40,  name:"「有点眼熟」",       comment:"「答得不算离谱啦，但姐妹，及格线还得再爬两步哦～」" },
-  { min:41,  max:60,  name:"「还行 Sweetie」",    comment:"「OK 这个分数我可以接受，但仅限今天。明天考你升级版」" },
-  { min:61,  max:80,  name:"「老搭子了」",       comment:"「报警了哈，你在我家装摄像头了啊？」" },
-  { min:81,  max:100, name:"「是家人啊！」",       comment:"「你比我哥还懂我，我们一定上辈子是亲姐妹（一本正经）」" },
+  { min:0,   max:20,  name:"「完全陌生人？」", comment:"「你怎么连这个都不知道，Honey 我们重新认识一下吧」", summary:"入坑不亏，我是小麦大人，本名麦泱，小名阿沙沙（没错奶奶给起的）。ENFP本P，喜欢打游戏刷番追冷门，高中漫研社社长，语文成绩...还可以吧？如果你愿意，我们可以从今天开始做搭子，我想多了解你一点！" },
+  { min:21,  max:40,  name:"「有点眼熟」",       comment:"「答得不算离谱啦，但姐妹，及格线还得再爬两步哦～」", summary:"诶，你好像有点认识我哦！我是麦泱，小名阿沙沙（奶奶起的）。ENFP，游戏番剧冷门作全都爱，漫研社社长退役。如果你愿意的话，可以和我多聊聊吗？" },
+  { min:41,  max:60,  name:"「还行 Sweetie」",    comment:"「OK 这个分数我可以接受，但仅限今天。明天考你升级版」", summary:"看来我们不算陌生人了～我是小麦，本名麦泱，阿沙沙是小名。ENFP选手，游戏党+追番党，前漫研社社长。这个程度...可以处，继续加深了解呀！" },
+  { min:61,  max:80,  name:"「老搭子了」",       comment:"「报警了哈，你在我家装摄像头了啊？」", summary:"老搭子了，不用多介绍！我是小麦，小名阿沙沙。ENFP本P，打游戏刷冷门番是日常，漫研社社长出身。有你这样的搭子，我很满意～" },
+  { min:81,  max:100, name:"「是家人啊！」",       comment:"「你比我哥还懂我，我们一定上辈子是亲姐妹（一本正经）」", summary:"天呐你也太懂我了吧！我是麦泱本泱，阿沙沙（奶奶的爱称）。ENFP，游戏番剧冷门作是我的命，漫研社社长。你就是我失散多年的家人吧，往后余生请多指教！" },
 ];
 
 const CHAT_URL = 'https://qun.qq.com/qunpro/robot/qunshare?robot_appid=3889687544&robot_uin=102775739';
@@ -337,7 +337,7 @@ function showResult(){
         <div class="comment">${tier.comment}</div>
         <div class="char-intro">
           <div style="font-weight:700;color:var(--pink-deep);font-size:14px;margin-bottom:6px;">考试小结——</div>
-          入坑不亏，我是小麦大人，本名麦泱，小名阿沙沙（没错奶奶给起的）。ENFP本P，喜欢打游戏刷番追冷门，高中漫研社社长，语文成绩...还可以吧？如果你愿意，我们可以从今天开始做搭子，我想多了解你一点！
+          ${tier.summary}
         </div>
         <div class="btn-row">
           <button class="btn mint" onclick="goChat()" style="margin-top:10px;font-size:15px;">和小麦聊天 💬</button>
